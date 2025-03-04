@@ -6,7 +6,10 @@ namespace BrewScada
 {
     public class Ingrediente
     {
-        public string Id { get; set; }
+        [BsonId]
+        [BsonRepresentation(BsonType.ObjectId)]
+        public ObjectId Id { get; set; } // Cambiamos a ObjectId
+
         public string Nombre { get; set; }
         public decimal Cantidad { get; set; }
         public decimal UmbralMinimo { get; set; }

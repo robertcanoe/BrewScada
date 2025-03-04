@@ -3,6 +3,9 @@
     partial class Form1
     {
         private System.ComponentModel.IContainer components = null;
+        private Label dateTimeLabel; // Solo declaramos aquí
+        private Label inventoryStatusLabel; // Nuevo label para estado de inventario
+        private Label progressLabel; // Nuevo label para porcentaje de progreso
 
         protected override void Dispose(bool disposing)
         {
@@ -15,329 +18,666 @@
 
         private void InitializeComponent()
         {
-            this.panel1 = new System.Windows.Forms.Panel();
-            this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.exportToPDFButton = new System.Windows.Forms.Button();
-            this.button1 = new System.Windows.Forms.Button();
-            this.label1 = new System.Windows.Forms.Label();
-            this.panel2 = new System.Windows.Forms.Panel();
-            this.label2 = new System.Windows.Forms.Label();
-            this.label3 = new System.Windows.Forms.Label();
-            this.label4 = new System.Windows.Forms.Label();
-            this.label5 = new System.Windows.Forms.Label();
-            this.label6 = new System.Windows.Forms.Label();
-            this.label7 = new System.Windows.Forms.Label();
-            this.label8 = new System.Windows.Forms.Label();
-            this.label9 = new System.Windows.Forms.Label();
-            this.label10 = new System.Windows.Forms.Label();
-            this.label11 = new System.Windows.Forms.Label();
-            this.label12 = new System.Windows.Forms.Label();
-            this.label13 = new System.Windows.Forms.Label();
-            this.textBox1 = new System.Windows.Forms.TextBox();
-            this.panel3 = new System.Windows.Forms.Panel();
-            this.label14 = new System.Windows.Forms.Label();
-            this.label15 = new System.Windows.Forms.Label();
-            this.label16 = new System.Windows.Forms.Label();
-            this.label17 = new System.Windows.Forms.Label();
-            this.label18 = new System.Windows.Forms.Label();
-            this.panel1.SuspendLayout();
-            this.groupBox1.SuspendLayout();
-            this.panel2.SuspendLayout();
-            this.panel3.SuspendLayout();
-            this.SuspendLayout();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
+            panel1 = new Panel();
+            panel3 = new Panel();
+            progressBar1 = new ProgressBar();
+            label18 = new Label();
+            label17 = new Label();
+            label16 = new Label();
+            label15 = new Label();
+            label14 = new Label();
+            inventoryStatusLabel = new Label();
+            progressLabel = new Label();
+            groupBox1 = new GroupBox();
+            button3 = new Button();
+            button2 = new Button();
+            exportToPDFButton = new Button();
+            button1 = new Button();
+            panel2 = new Panel();
+            pictureBox8 = new PictureBox();
+            pictureBox4 = new PictureBox();
+            pictureBox7 = new PictureBox();
+            pictureBox6 = new PictureBox();
+            textBox1 = new TextBox();
+            label1 = new Label();
+            label27 = new Label();
+            label26 = new Label();
+            label25 = new Label();
+            label24 = new Label();
+            pictureBox1 = new PictureBox();
+            label22 = new Label();
+            label23 = new Label();
+            label20 = new Label();
+            label21 = new Label();
+            label19 = new Label();
+            label12 = new Label();
+            label11 = new Label();
+            label2 = new Label();
+            pictureBox3 = new PictureBox();
+            pictureBox2 = new PictureBox();
+            pictureBox5 = new PictureBox();
+            label13 = new Label();
+            dateTimeLabel = new Label();
+            label7 = new Label();
+            label3 = new Label();
+            label10 = new Label();
+            label9 = new Label();
+            label8 = new Label();
+            label6 = new Label();
+            label5 = new Label();
+            label4 = new Label();
+            panel1.SuspendLayout();
+            panel3.SuspendLayout();
+            groupBox1.SuspendLayout();
+            panel2.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)pictureBox8).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)pictureBox4).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)pictureBox7).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)pictureBox6).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)pictureBox3).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)pictureBox2).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)pictureBox5).BeginInit();
+            SuspendLayout();
             // 
             // panel1
             // 
-            this.panel1.Controls.Add(this.panel3);
-            this.panel1.Controls.Add(this.panel2);
-            this.panel1.Controls.Add(this.groupBox1);
-            this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel1.Location = new System.Drawing.Point(0, 0);
-            this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(800, 600);
-            this.panel1.TabIndex = 0;
-            // 
-            // groupBox1
-            // 
-            this.groupBox1.Controls.Add(this.exportToPDFButton);
-            this.groupBox1.Controls.Add(this.button1);
-            this.groupBox1.Controls.Add(this.label1);
-            this.groupBox1.Location = new System.Drawing.Point(12, 12);
-            this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(250, 100);
-            this.groupBox1.TabIndex = 0;
-            this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "Production Control";
-            // 
-            // exportToPDFButton
-            // 
-            this.exportToPDFButton.Location = new System.Drawing.Point(6, 77);
-            this.exportToPDFButton.Name = "exportToPDFButton";
-            this.exportToPDFButton.Size = new System.Drawing.Size(100, 23);
-            this.exportToPDFButton.TabIndex = 2;
-            this.exportToPDFButton.Text = "Exportar a PDF";
-            this.exportToPDFButton.UseVisualStyleBackColor = true;
-            this.exportToPDFButton.Click += new System.EventHandler(this.exportToPDFButton_Click);
-            // 
-            // button1
-            // 
-            this.button1.Location = new System.Drawing.Point(6, 48);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(100, 23);
-            this.button1.TabIndex = 1;
-            this.button1.Text = "Empezar";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.button1_Click);
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(6, 22);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(71, 15);
-            this.label1.TabIndex = 0;
-            this.label1.Text = "Batch Status";
-            // 
-            // panel2
-            // 
-            this.panel2.Controls.Add(this.textBox1);
-            this.panel2.Controls.Add(this.label13);
-            this.panel2.Controls.Add(this.label12);
-            this.panel2.Controls.Add(this.label11);
-            this.panel2.Controls.Add(this.label10);
-            this.panel2.Controls.Add(this.label9);
-            this.panel2.Controls.Add(this.label8);
-            this.panel2.Controls.Add(this.label7);
-            this.panel2.Controls.Add(this.label6);
-            this.panel2.Controls.Add(this.label5);
-            this.panel2.Controls.Add(this.label4);
-            this.panel2.Controls.Add(this.label3);
-            this.panel2.Controls.Add(this.label2);
-            this.panel2.Location = new System.Drawing.Point(268, 12);
-            this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(520, 426);
-            this.panel2.TabIndex = 1;
-            // 
-            // label2
-            // 
-            this.label2.AutoSize = true;
-            this.label2.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            this.label2.Location = new System.Drawing.Point(6, 10);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(150, 21);
-            this.label2.TabIndex = 0;
-            this.label2.Text = "Process Information";
-            // 
-            // label3
-            // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(6, 50);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(56, 15);
-            this.label3.TabIndex = 1;
-            this.label3.Text = "Molienda:";
-            // 
-            // label4
-            // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(6, 80);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(54, 15);
-            this.label4.TabIndex = 2;
-            this.label4.Text = "Cocción:";
-            // 
-            // label5
-            // 
-            this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(6, 110);
-            this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(78, 15);
-            this.label5.TabIndex = 3;
-            this.label5.Text = "Fermentación:";
-            // 
-            // label6
-            // 
-            this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(6, 140);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(72, 15);
-            this.label6.TabIndex = 4;
-            this.label6.Text = "Embotellado:";
-            // 
-            // label7
-            // 
-            this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(140, 50);
-            this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(38, 15);
-            this.label7.TabIndex = 5;
-            this.label7.Text = "00:00";
-            // 
-            // label8
-            // 
-            this.label8.AutoSize = true;
-            this.label8.Location = new System.Drawing.Point(140, 80);
-            this.label8.Name = "label8";
-            this.label8.Size = new System.Drawing.Size(38, 15);
-            this.label8.TabIndex = 6;
-            this.label8.Text = "00:00";
-            // 
-            // label9
-            // 
-            this.label9.AutoSize = true;
-            this.label9.Location = new System.Drawing.Point(140, 110);
-            this.label9.Name = "label9";
-            this.label9.Size = new System.Drawing.Size(38, 15);
-            this.label9.TabIndex = 7;
-            this.label9.Text = "00:00";
-            // 
-            // label10
-            // 
-            this.label10.AutoSize = true;
-            this.label10.Location = new System.Drawing.Point(140, 140);
-            this.label10.Name = "label10";
-            this.label10.Size = new System.Drawing.Size(38, 15);
-            this.label10.TabIndex = 8;
-            this.label10.Text = "00:00";
-            // 
-            // label11
-            // 
-            this.label11.AutoSize = true;
-            this.label11.Location = new System.Drawing.Point(6, 170);
-            this.label11.Name = "label11";
-            this.label11.Size = new System.Drawing.Size(120, 15);
-            this.label11.TabIndex = 9;
-            this.label11.Text = "Total en tanque (min):";
-            // 
-            // label12
-            // 
-            this.label12.AutoSize = true;
-            this.label12.Location = new System.Drawing.Point(140, 170);
-            this.label12.Name = "label12";
-            this.label12.Size = new System.Drawing.Size(38, 15);
-            this.label12.TabIndex = 10;
-            this.label12.Text = "00:00";
-            // 
-            // label13
-            // 
-            this.label13.AutoSize = true;
-            this.label13.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            this.label13.Location = new System.Drawing.Point(6, 200);
-            this.label13.Name = "label13";
-            this.label13.Size = new System.Drawing.Size(180, 21);
-            this.label13.TabIndex = 11;
-            this.label13.Text = "Detalles del proceso:";
-            // 
-            // textBox1
-            // 
-            this.textBox1.Location = new System.Drawing.Point(6, 224);
-            this.textBox1.Multiline = true;
-            this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(500, 192);
-            this.textBox1.TabIndex = 12;
-            this.textBox1.ReadOnly = true;  // Hacer la caja de texto no editable
+            panel1.Controls.Add(panel3);
+            panel1.Controls.Add(groupBox1);
+            panel1.Controls.Add(panel2);
+            panel1.Dock = DockStyle.Fill;
+            panel1.Location = new Point(0, 0);
+            panel1.Margin = new Padding(4, 5, 4, 5);
+            panel1.Name = "panel1";
+            panel1.Size = new Size(1898, 1024);
+            panel1.TabIndex = 0;
             // 
             // panel3
             // 
-            this.panel3.Controls.Add(this.label18);
-            this.panel3.Controls.Add(this.label17);
-            this.panel3.Controls.Add(this.label16);
-            this.panel3.Controls.Add(this.label15);
-            this.panel3.Controls.Add(this.label14);
-            this.panel3.Location = new System.Drawing.Point(12, 118);
-            this.panel3.Name = "panel3";
-            this.panel3.Size = new System.Drawing.Size(250, 320);
-            this.panel3.TabIndex = 2;
+            panel3.Controls.Add(progressBar1);
+            panel3.Controls.Add(label18);
+            panel3.Controls.Add(label17);
+            panel3.Controls.Add(label16);
+            panel3.Controls.Add(label15);
+            panel3.Controls.Add(label14);
+            panel3.Controls.Add(inventoryStatusLabel);
+            panel3.Controls.Add(progressLabel);
+            panel3.Location = new Point(12, 306);
+            panel3.Margin = new Padding(4, 5, 4, 5);
+            panel3.Name = "panel3";
+            panel3.Size = new Size(391, 430);
+            panel3.TabIndex = 2;
             // 
-            // label14
+            // progressBar1
             // 
-            this.label14.AutoSize = true;
-            this.label14.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            this.label14.Location = new System.Drawing.Point(3, 10);
-            this.label14.Name = "label14";
-            this.label14.Size = new System.Drawing.Size(79, 21);
-            this.label14.TabIndex = 0;
-            this.label14.Text = "Almacén:";
-            // 
-            // label15
-            // 
-            this.label15.AutoSize = true;
-            this.label15.Location = new System.Drawing.Point(3, 50);
-            this.label15.Name = "label15";
-            this.label15.Size = new System.Drawing.Size(133, 15);
-            this.label15.TabIndex = 1;
-            this.label15.Text = "Malta de cebada: 200 kg";
-            // 
-            // label16
-            // 
-            this.label16.AutoSize = true;
-            this.label16.Location = new System.Drawing.Point(3, 80);
-            this.label16.Name = "label16";
-            this.label16.Size = new System.Drawing.Size(102, 15);
-            this.label16.TabIndex = 2;
-            this.label16.Text = "Agua: 1200 litros";
-            // 
-            // label17
-            // 
-            this.label17.AutoSize = true;
-            this.label17.Location = new System.Drawing.Point(3, 110);
-            this.label17.Name = "label17";
-            this.label17.Size = new System.Drawing.Size(114, 15);
-            this.label17.TabIndex = 3;
-            this.label17.Text = "Levadura: 150 kg";
+            progressBar1.Location = new Point(9, 292);
+            progressBar1.Name = "progressBar1";
+            progressBar1.Size = new Size(233, 49);
+            progressBar1.TabIndex = 4;
             // 
             // label18
             // 
-            this.label18.AutoSize = true;
-            this.label18.Location = new System.Drawing.Point(3, 140);
-            this.label18.Name = "label18";
-            this.label18.Size = new System.Drawing.Size(93, 15);
-            this.label18.TabIndex = 4;
-            this.label18.Text = "Botellas: 1000";
+            label18.AutoSize = true;
+            label18.Location = new Point(6, 233);
+            label18.Margin = new Padding(4, 0, 4, 0);
+            label18.Name = "label18";
+            label18.Size = new Size(0, 25);
+            label18.TabIndex = 4;
+            // 
+            // label17
+            // 
+            label17.AutoSize = true;
+            label17.Location = new Point(6, 183);
+            label17.Margin = new Padding(4, 0, 4, 0);
+            label17.Name = "label17";
+            label17.Size = new Size(0, 25);
+            label17.TabIndex = 3;
+            // 
+            // label16
+            // 
+            label16.AutoSize = true;
+            label16.Location = new Point(6, 133);
+            label16.Margin = new Padding(4, 0, 4, 0);
+            label16.Name = "label16";
+            label16.Size = new Size(0, 25);
+            label16.TabIndex = 2;
+            // 
+            // label15
+            // 
+            label15.AutoSize = true;
+            label15.Location = new Point(6, 83);
+            label15.Margin = new Padding(4, 0, 4, 0);
+            label15.Name = "label15";
+            label15.Size = new Size(0, 25);
+            label15.TabIndex = 1;
+            // 
+            // label14
+            // 
+            label14.AutoSize = true;
+            label14.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
+            label14.Location = new Point(6, 17);
+            label14.Margin = new Padding(4, 0, 4, 0);
+            label14.Name = "label14";
+            label14.Size = new Size(345, 32);
+            label14.TabIndex = 0;
+            label14.Text = "Almacén de materias primas:";
+            // 
+            // inventoryStatusLabel
+            // 
+            inventoryStatusLabel.AutoSize = true;
+            inventoryStatusLabel.Location = new Point(9, 350);
+            inventoryStatusLabel.Name = "inventoryStatusLabel";
+            inventoryStatusLabel.Size = new Size(246, 25);
+            inventoryStatusLabel.TabIndex = 5;
+            inventoryStatusLabel.Text = "Estado del inventario: Normal";
+            // 
+            // progressLabel
+            // 
+            progressLabel.AutoSize = true;
+            progressLabel.Location = new Point(246, 305);
+            progressLabel.Name = "progressLabel";
+            progressLabel.Size = new Size(118, 25);
+            progressLabel.TabIndex = 7;
+            progressLabel.Text = "Progreso: 0%";
+            // 
+            // groupBox1
+            // 
+            groupBox1.Controls.Add(button3);
+            groupBox1.Controls.Add(button2);
+            groupBox1.Controls.Add(exportToPDFButton);
+            groupBox1.Controls.Add(button1);
+            groupBox1.Location = new Point(15, 20);
+            groupBox1.Margin = new Padding(4, 5, 4, 5);
+            groupBox1.Name = "groupBox1";
+            groupBox1.Padding = new Padding(4, 5, 4, 5);
+            groupBox1.Size = new Size(388, 265);
+            groupBox1.TabIndex = 0;
+            groupBox1.TabStop = false;
+            groupBox1.Text = "Control de Producción";
+            // 
+            // button3
+            // 
+            button3.Location = new Point(7, 201);
+            button3.Margin = new Padding(4, 5, 4, 5);
+            button3.Name = "button3";
+            button3.Size = new Size(143, 38);
+            button3.TabIndex = 4;
+            button3.Text = "Parar";
+            button3.UseVisualStyleBackColor = true;
+            button3.Click += button3_Click;
+            // 
+            // button2
+            // 
+            button2.Location = new Point(7, 153);
+            button2.Margin = new Padding(4, 5, 4, 5);
+            button2.Name = "button2";
+            button2.Size = new Size(143, 38);
+            button2.TabIndex = 3;
+            button2.Text = "Pausar";
+            button2.UseVisualStyleBackColor = true;
+            button2.Click += button2_Click;
+            // 
+            // exportToPDFButton
+            // 
+            exportToPDFButton.Location = new Point(8, 105);
+            exportToPDFButton.Margin = new Padding(4, 5, 4, 5);
+            exportToPDFButton.Name = "exportToPDFButton";
+            exportToPDFButton.Size = new Size(143, 38);
+            exportToPDFButton.TabIndex = 2;
+            exportToPDFButton.Text = "Exportar a PDF";
+            exportToPDFButton.UseVisualStyleBackColor = true;
+            exportToPDFButton.Click += exportToPDFButton_Click;
+            // 
+            // button1
+            // 
+            button1.Location = new Point(8, 55);
+            button1.Margin = new Padding(4, 5, 4, 5);
+            button1.Name = "button1";
+            button1.Size = new Size(143, 38);
+            button1.TabIndex = 1;
+            button1.Text = "Empezar";
+            button1.UseVisualStyleBackColor = true;
+            button1.Click += button1_Click;
+            // 
+            // panel2
+            // 
+            panel2.Controls.Add(pictureBox8);
+            panel2.Controls.Add(pictureBox4);
+            panel2.Controls.Add(pictureBox7);
+            panel2.Controls.Add(pictureBox6);
+            panel2.Controls.Add(textBox1);
+            panel2.Controls.Add(label1);
+            panel2.Controls.Add(label27);
+            panel2.Controls.Add(label26);
+            panel2.Controls.Add(label25);
+            panel2.Controls.Add(label24);
+            panel2.Controls.Add(pictureBox1);
+            panel2.Controls.Add(label22);
+            panel2.Controls.Add(label23);
+            panel2.Controls.Add(label20);
+            panel2.Controls.Add(label21);
+            panel2.Controls.Add(label19);
+            panel2.Controls.Add(label12);
+            panel2.Controls.Add(label11);
+            panel2.Controls.Add(label2);
+            panel2.Controls.Add(pictureBox3);
+            panel2.Controls.Add(pictureBox2);
+            panel2.Controls.Add(pictureBox5);
+            panel2.Controls.Add(label13);
+            panel2.Controls.Add(dateTimeLabel);
+            panel2.Controls.Add(label7);
+            panel2.Controls.Add(label3);
+            panel2.Controls.Add(label10);
+            panel2.Controls.Add(label9);
+            panel2.Controls.Add(label8);
+            panel2.Controls.Add(label6);
+            panel2.Controls.Add(label5);
+            panel2.Controls.Add(label4);
+            panel2.Location = new Point(411, 9);
+            panel2.Margin = new Padding(4, 5, 4, 5);
+            panel2.Name = "panel2";
+            panel2.Size = new Size(1487, 966);
+            panel2.TabIndex = 1;
+            // 
+            // pictureBox8
+            // 
+            pictureBox8.ImageLocation = "flecha_izq.png";
+            pictureBox8.Location = new Point(673, 659);
+            pictureBox8.Name = "pictureBox8";
+            pictureBox8.Size = new Size(150, 125);
+            pictureBox8.SizeMode = PictureBoxSizeMode.Zoom;
+            pictureBox8.TabIndex = 34;
+            pictureBox8.TabStop = false;
+            // 
+            // pictureBox4
+            // 
+            pictureBox4.ImageLocation = "flecha_curva.png";
+            pictureBox4.Location = new Point(1239, 400);
+            pictureBox4.Name = "pictureBox4";
+            pictureBox4.Size = new Size(137, 135);
+            pictureBox4.SizeMode = PictureBoxSizeMode.Zoom;
+            pictureBox4.TabIndex = 33;
+            pictureBox4.TabStop = false;
+            // 
+            // pictureBox7
+            // 
+            pictureBox7.ImageLocation = "flecha.png";
+            pictureBox7.Location = new Point(807, 183);
+            pictureBox7.Name = "pictureBox7";
+            pictureBox7.Size = new Size(132, 93);
+            pictureBox7.SizeMode = PictureBoxSizeMode.Zoom;
+            pictureBox7.TabIndex = 32;
+            pictureBox7.TabStop = false;
+            // 
+            // pictureBox6
+            // 
+            pictureBox6.ImageLocation = "flecha.png";
+            pictureBox6.Location = new Point(405, 183);
+            pictureBox6.Name = "pictureBox6";
+            pictureBox6.Size = new Size(132, 93);
+            pictureBox6.SizeMode = PictureBoxSizeMode.Zoom;
+            pictureBox6.TabIndex = 31;
+            pictureBox6.TabStop = false;
+            // 
+            // textBox1
+            // 
+            textBox1.BackColor = SystemColors.ActiveCaption;
+            textBox1.Location = new Point(38, 604);
+            textBox1.Multiline = true;
+            textBox1.Name = "textBox1";
+            textBox1.ReadOnly = true;
+            textBox1.Size = new Size(511, 292);
+            textBox1.TabIndex = 29;
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Font = new Font("Segoe UI", 14F, FontStyle.Bold);
+            label1.Location = new Point(38, 539);
+            label1.Margin = new Padding(4, 0, 4, 0);
+            label1.Name = "label1";
+            label1.Size = new Size(476, 38);
+            label1.TabIndex = 28;
+            label1.Text = "Almacén de productos terminados:";
+            label1.Click += label1_Click;
+            // 
+            // label27
+            // 
+            label27.AutoSize = true;
+            label27.Location = new Point(988, 857);
+            label27.Margin = new Padding(4, 0, 4, 0);
+            label27.Name = "label27";
+            label27.Size = new Size(59, 25);
+            label27.TabIndex = 27;
+            label27.Text = "Batch:";
+            // 
+            // label26
+            // 
+            label26.AutoSize = true;
+            label26.Location = new Point(980, 446);
+            label26.Margin = new Padding(4, 0, 4, 0);
+            label26.Name = "label26";
+            label26.Size = new Size(59, 25);
+            label26.TabIndex = 26;
+            label26.Text = "Batch:";
+            // 
+            // label25
+            // 
+            label25.AutoSize = true;
+            label25.Location = new Point(548, 446);
+            label25.Margin = new Padding(4, 0, 4, 0);
+            label25.Name = "label25";
+            label25.Size = new Size(59, 25);
+            label25.TabIndex = 25;
+            label25.Text = "Batch:";
+            // 
+            // label24
+            // 
+            label24.AutoSize = true;
+            label24.Location = new Point(166, 446);
+            label24.Margin = new Padding(4, 0, 4, 0);
+            label24.Name = "label24";
+            label24.Size = new Size(59, 25);
+            label24.TabIndex = 24;
+            label24.Text = "Batch:";
+            label24.Click += label24_Click;
+            // 
+            // pictureBox1
+            // 
+            pictureBox1.ImageLocation = "img_malta.png";
+            pictureBox1.Location = new Point(166, 113);
+            pictureBox1.Name = "pictureBox1";
+            pictureBox1.Size = new Size(233, 207);
+            pictureBox1.SizeMode = PictureBoxSizeMode.Zoom;
+            pictureBox1.TabIndex = 3;
+            pictureBox1.TabStop = false;
+            pictureBox1.Click += pictureBox1_Click;
+            // 
+            // label22
+            // 
+            label22.AutoSize = true;
+            label22.Location = new Point(988, 819);
+            label22.Margin = new Padding(4, 0, 4, 0);
+            label22.Name = "label22";
+            label22.Size = new Size(39, 25);
+            label22.TabIndex = 23;
+            label22.Text = "Fin:";
+            // 
+            // label23
+            // 
+            label23.AutoSize = true;
+            label23.Location = new Point(988, 780);
+            label23.Margin = new Padding(4, 0, 4, 0);
+            label23.Name = "label23";
+            label23.Size = new Size(58, 25);
+            label23.TabIndex = 22;
+            label23.Text = "Inicio:";
+            // 
+            // label20
+            // 
+            label20.AutoSize = true;
+            label20.Location = new Point(980, 416);
+            label20.Margin = new Padding(4, 0, 4, 0);
+            label20.Name = "label20";
+            label20.Size = new Size(39, 25);
+            label20.TabIndex = 21;
+            label20.Text = "Fin:";
+            // 
+            // label21
+            // 
+            label21.AutoSize = true;
+            label21.Location = new Point(980, 377);
+            label21.Margin = new Padding(4, 0, 4, 0);
+            label21.Name = "label21";
+            label21.Size = new Size(58, 25);
+            label21.TabIndex = 20;
+            label21.Text = "Inicio:";
+            // 
+            // label19
+            // 
+            label19.AutoSize = true;
+            label19.Location = new Point(548, 412);
+            label19.Margin = new Padding(4, 0, 4, 0);
+            label19.Name = "label19";
+            label19.Size = new Size(39, 25);
+            label19.TabIndex = 19;
+            label19.Text = "Fin:";
+            // 
+            // label12
+            // 
+            label12.AutoSize = true;
+            label12.Location = new Point(548, 373);
+            label12.Margin = new Padding(4, 0, 4, 0);
+            label12.Name = "label12";
+            label12.Size = new Size(58, 25);
+            label12.TabIndex = 18;
+            label12.Text = "Inicio:";
+            // 
+            // label11
+            // 
+            label11.AutoSize = true;
+            label11.Location = new Point(166, 412);
+            label11.Margin = new Padding(4, 0, 4, 0);
+            label11.Name = "label11";
+            label11.Size = new Size(39, 25);
+            label11.TabIndex = 17;
+            label11.Text = "Fin:";
+            label11.Click += label11_Click;
+            // 
+            // label2
+            // 
+            label2.AutoSize = true;
+            label2.Location = new Point(166, 374);
+            label2.Margin = new Padding(4, 0, 4, 0);
+            label2.Name = "label2";
+            label2.Size = new Size(58, 25);
+            label2.TabIndex = 16;
+            label2.Text = "Inicio:";
+            // 
+            // pictureBox3
+            // 
+            pictureBox3.ImageLocation = "img_embotellado2.png";
+            pictureBox3.Location = new Point(968, 508);
+            pictureBox3.Name = "pictureBox3";
+            pictureBox3.Size = new Size(233, 207);
+            pictureBox3.SizeMode = PictureBoxSizeMode.Zoom;
+            pictureBox3.TabIndex = 13;
+            pictureBox3.TabStop = false;
+            // 
+            // pictureBox2
+            // 
+            pictureBox2.ImageLocation = "img_fermentacion2.png";
+            pictureBox2.Location = new Point(968, 113);
+            pictureBox2.Name = "pictureBox2";
+            pictureBox2.Size = new Size(233, 207);
+            pictureBox2.SizeMode = PictureBoxSizeMode.Zoom;
+            pictureBox2.TabIndex = 12;
+            pictureBox2.TabStop = false;
+            // 
+            // pictureBox5
+            // 
+            pictureBox5.ImageLocation = "img_coccion.png";
+            pictureBox5.Location = new Point(548, 113);
+            pictureBox5.Name = "pictureBox5";
+            pictureBox5.Size = new Size(233, 207);
+            pictureBox5.SizeMode = PictureBoxSizeMode.Zoom;
+            pictureBox5.TabIndex = 7;
+            pictureBox5.TabStop = false;
+            pictureBox5.Click += pictureBox5_Click;
+            // 
+            // label13
+            // 
+            label13.AutoSize = true;
+            label13.Font = new Font("Segoe UI", 14F, FontStyle.Bold);
+            label13.Location = new Point(38, 35);
+            label13.Margin = new Padding(4, 0, 4, 0);
+            label13.Name = "label13";
+            label13.Size = new Size(288, 38);
+            label13.TabIndex = 11;
+            label13.Text = "Detalles del proceso:";
+            // 
+            // dateTimeLabel
+            // 
+            dateTimeLabel.AutoSize = true;
+            dateTimeLabel.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
+            dateTimeLabel.Location = new Point(1188, 21);
+            dateTimeLabel.Name = "dateTimeLabel";
+            dateTimeLabel.Size = new Size(287, 32);
+            dateTimeLabel.TabIndex = 15;
+            dateTimeLabel.Text = "dd/MM/yyyy HH:mm:ss";
+            dateTimeLabel.Click += dateTimeLabel_Click;
+            // 
+            // label7
+            // 
+            label7.AutoSize = true;
+            label7.Location = new Point(277, 339);
+            label7.Margin = new Padding(4, 0, 4, 0);
+            label7.Name = "label7";
+            label7.Size = new Size(0, 25);
+            label7.TabIndex = 5;
+            label7.Click += label7_Click;
+            // 
+            // label3
+            // 
+            label3.AutoSize = true;
+            label3.Location = new Point(166, 339);
+            label3.Margin = new Padding(4, 0, 4, 0);
+            label3.Name = "label3";
+            label3.Size = new Size(90, 25);
+            label3.TabIndex = 1;
+            label3.Text = "Molienda:";
+            label3.Click += label3_Click;
+            // 
+            // label10
+            // 
+            label10.AutoSize = true;
+            label10.Location = new Point(1126, 738);
+            label10.Margin = new Padding(4, 0, 4, 0);
+            label10.Name = "label10";
+            label10.Size = new Size(0, 25);
+            label10.TabIndex = 8;
+            // 
+            // label9
+            // 
+            label9.AutoSize = true;
+            label9.Location = new Point(1126, 338);
+            label9.Margin = new Padding(4, 0, 4, 0);
+            label9.Name = "label9";
+            label9.Size = new Size(0, 25);
+            label9.TabIndex = 7;
+            // 
+            // label8
+            // 
+            label8.AutoSize = true;
+            label8.Location = new Point(655, 340);
+            label8.Margin = new Padding(4, 0, 4, 0);
+            label8.Name = "label8";
+            label8.Size = new Size(0, 25);
+            label8.TabIndex = 6;
+            // 
+            // label6
+            // 
+            label6.AutoSize = true;
+            label6.Location = new Point(980, 738);
+            label6.Margin = new Padding(4, 0, 4, 0);
+            label6.Name = "label6";
+            label6.Size = new Size(117, 25);
+            label6.TabIndex = 4;
+            label6.Text = "Embotellado:";
+            // 
+            // label5
+            // 
+            label5.AutoSize = true;
+            label5.Location = new Point(980, 339);
+            label5.Margin = new Padding(4, 0, 4, 0);
+            label5.Name = "label5";
+            label5.Size = new Size(123, 25);
+            label5.TabIndex = 3;
+            label5.Text = "Fermentación:";
+            // 
+            // label4
+            // 
+            label4.AutoSize = true;
+            label4.Location = new Point(548, 338);
+            label4.Margin = new Padding(4, 0, 4, 0);
+            label4.Name = "label4";
+            label4.Size = new Size(79, 25);
+            label4.TabIndex = 2;
+            label4.Text = "Cocción:";
             // 
             // Form1
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 600);
-            this.Controls.Add(this.panel1);
-            this.Name = "Form1";
-            this.Text = "BrewScada";
-            this.panel1.ResumeLayout(false);
-            this.groupBox1.ResumeLayout(false);
-            this.groupBox1.PerformLayout();
-            this.panel2.ResumeLayout(false);
-            this.panel2.PerformLayout();
-            this.panel3.ResumeLayout(false);
-            this.panel3.PerformLayout();
-            this.ResumeLayout(false);
-
+            AutoScaleDimensions = new SizeF(10F, 25F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(1898, 1024);
+            Controls.Add(panel1);
+            Icon = (Icon)resources.GetObject("$this.Icon");
+            Margin = new Padding(4, 5, 4, 5);
+            Name = "Form1";
+            Text = "BrewScada";
+            Load += Form1_Load;
+            panel1.ResumeLayout(false);
+            panel3.ResumeLayout(false);
+            panel3.PerformLayout();
+            groupBox1.ResumeLayout(false);
+            panel2.ResumeLayout(false);
+            panel2.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)pictureBox8).EndInit();
+            ((System.ComponentModel.ISupportInitialize)pictureBox4).EndInit();
+            ((System.ComponentModel.ISupportInitialize)pictureBox7).EndInit();
+            ((System.ComponentModel.ISupportInitialize)pictureBox6).EndInit();
+            ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
+            ((System.ComponentModel.ISupportInitialize)pictureBox3).EndInit();
+            ((System.ComponentModel.ISupportInitialize)pictureBox2).EndInit();
+            ((System.ComponentModel.ISupportInitialize)pictureBox5).EndInit();
+            ResumeLayout(false);
         }
 
         private System.Windows.Forms.Panel panel1;
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.Button exportToPDFButton;
-        private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.Panel panel2;
-        private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.Label label5;
-        private System.Windows.Forms.Label label6;
-        private System.Windows.Forms.Label label7;
-        private System.Windows.Forms.Label label8;
-        private System.Windows.Forms.Label label9;
-        private System.Windows.Forms.Label label10;
-        private System.Windows.Forms.Label label11;
-        private System.Windows.Forms.Label label12;
-        private System.Windows.Forms.Label label13;
-        private System.Windows.Forms.TextBox textBox1;
-        private System.Windows.Forms.Panel panel3;
-        private System.Windows.Forms.Label label14;
-        private System.Windows.Forms.Label label18;
-        private System.Windows.Forms.Label label17;
-        private System.Windows.Forms.Label label16;
-        private System.Windows.Forms.Label label15;
+        private Panel panel3;
+        private Label label18;
+        private Label label17;
+        private Label label16;
+        private Label label15;
+        private Label label14;
+        private Button button2;
+        private Button button3;
+        private Panel panel2;
+        private Label label7;
+        private Label label3;
+        private Label label13;
+        private Label label10;
+        private Label label9;
+        private Label label8;
+        private Label label6;
+        private Label label5;
+        private Label label4;
+        private PictureBox pictureBox5;
+        private PictureBox pictureBox3;
+        private PictureBox pictureBox2;
+        private PictureBox pictureBox1;
+        private ProgressBar progressBar1;
+        private Label label11;
+        private Label label2;
+        private Label label22;
+        private Label label23;
+        private Label label20;
+        private Label label21;
+        private Label label19;
+        private Label label12;
+        private Label label27;
+        private Label label26;
+        private Label label25;
+        private Label label24;
+        private Label label1;
+        private TextBox textBox1;
+        private PictureBox pictureBox6;
+        private PictureBox pictureBox7;
+        private PictureBox pictureBox8;
+        private PictureBox pictureBox4;
     }
 }

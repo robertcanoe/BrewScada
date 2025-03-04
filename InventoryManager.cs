@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace BrewScada
@@ -20,7 +21,23 @@ namespace BrewScada
 
         public void AddIngrediente(Ingrediente ingrediente)
         {
-            _ingredientesCollection.InsertOne(ingrediente);
+            // Si el Id es nulo, dejamos que MongoDB lo genere automáticamente
+            if (ingrediente.Id == ObjectId.Empty)
+            {
+                ingrediente.Id = ObjectId.GenerateNewId(); // Generamos un nuevo ObjectId único
+            }
+
+            // Verificamos si ya existe un ingrediente con el mismo nombre
+            var existingIngredient = _ingredientesCollection.Find(i => i.Nombre.ToLower() == ingrediente.Nombre.ToLower()).FirstOrDefault();
+            if (existingIngredient == null)
+            {
+                _ingredientesCollection.InsertOne(ingrediente);
+            }
+            else
+            {
+                // Si ya existe, actualizamos la cantidad en lugar de insertar un duplicado
+                UpdateIngredienteQuantity(ingrediente.Nombre, ingrediente.Cantidad);
+            }
         }
 
         public void UpdateIngrediente(Ingrediente ingrediente)
@@ -29,7 +46,14 @@ namespace BrewScada
             _ingredientesCollection.ReplaceOne(filter, ingrediente);
         }
 
-        public void DeleteIngrediente(string id)
+        public void UpdateIngredienteQuantity(string nombre, decimal nuevaCantidad)
+        {
+            var filter = Builders<Ingrediente>.Filter.Eq(i => i.Nombre.ToLower(), nombre.ToLower());
+            var update = Builders<Ingrediente>.Update.Set(i => i.Cantidad, nuevaCantidad);
+            _ingredientesCollection.UpdateOne(filter, update);
+        }
+
+        public void DeleteIngrediente(ObjectId id)
         {
             var filter = Builders<Ingrediente>.Filter.Eq(i => i.Id, id);
             _ingredientesCollection.DeleteOne(filter);
