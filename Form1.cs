@@ -5,6 +5,7 @@ using System.Windows.Forms;
 using MongoDB.Driver;
 using System.Drawing;
 using MongoDB.Bson;
+using System.Threading;
 
 namespace BrewScada
 {
@@ -14,9 +15,10 @@ namespace BrewScada
         private IMongoCollection<Produccion> _produccionCollection;
         private IMongoCollection<Counter> _counterCollection;
         private IMongoCollection<Ingrediente> _ingredientesCollection;
-        private IMongoCollection<BsonDocument> _batchesBotellasCollection; // Para el "Almacén de productos terminados"
-        private System.Timers.Timer _timer; // Usamos System.Timers.Timer para los 20 segundos por etapa
-        private Random _random; // Mantengo Random por si lo necesitamos para algo más adelante, aunque ahora usaremos valores fijos
+        private IMongoCollection<BsonDocument> _batchesBotellasCollection;
+        private System.Windows.Forms.Timer _processTimer; // Timer para las etapas principales (20 segundos)
+        private System.Windows.Forms.Timer _delayTimer;   // Timer para los 10 segundos de retraso en embotellado
+        private Random _random;
         private bool isRunning;
         private bool isPaused;
         private string batchDetails;
@@ -25,22 +27,20 @@ namespace BrewScada
         private decimal cantidadLevadura;
         private decimal cantidadBotellas;
         private int stage;
-        private DateTime batchStartTime; // Tiempo de inicio del lote
-        private DateTime[] stageStartTimes; // Tiempos de inicio de cada etapa (simulados realistas)
-        private string currentBatchName; // Nombre del lote actual para buscar en la base de datos
-        private int batchCount; // Contador para los 10 batches
-        private const int TOTAL_BATCHES = 10; // Número total de batches para 10,000 botellas
+        private DateTime batchStartTime;
+        private DateTime[] stageStartTimes;
+        private string currentBatchName;
+        private int batchCount;
+        private const int TOTAL_BATCHES = 10;
 
-        // Valores iniciales del "Almacén de materias primas"
-        private decimal almacenMalta = 2000m; // 2,000 kg
-        private decimal almacenAgua = 12000m;  // 12,000 L
-        private decimal almacenLevadura = 30m; // 30 kg
-        private decimal almacenBotellas = 10000m; // 10,000 botellas vacías
+        private decimal almacenMalta = 2000m;
+        private decimal almacenAgua = 12000m;
+        private decimal almacenLevadura = 30m;
+        private decimal almacenBotellas = 10000m;
 
         private InventoryManager _inventoryManager;
         private ProductionLog _productionLog;
 
-        // Declaramos los labels como campos privados, mapeando a los nombres reales en Designer.cs
         private Label moliendaStartLabel; // Mapeado a label2
         private Label moliendaEndLabel;   // Mapeado a label11
         private Label coccionStartLabel;  // Mapeado a label12
@@ -59,15 +59,15 @@ namespace BrewScada
             _produccionCollection = _dbConnection.GetCollection<Produccion>("Produccion");
             _counterCollection = _dbConnection.GetCollection<Counter>("Counters");
             _ingredientesCollection = _dbConnection.GetCollection<Ingrediente>("Ingredientes");
-            _batchesBotellasCollection = _dbConnection.GetCollection<BsonDocument>("BatchesBotellas"); // Nueva colección para botellas llenas
+            _batchesBotellasCollection = _dbConnection.GetCollection<BsonDocument>("BatchesBotellas");
 
-            _random = new Random(); // Mantengo por compatibilidad, aunque no lo usaremos
-            InitializeTimer();
+            _random = new Random();
+            InitializeTimers();
             isRunning = false;
             isPaused = false;
             batchDetails = string.Empty;
             stage = 0;
-            stageStartTimes = new DateTime[4]; // 4 etapas: Molienda, Cocción, Fermentación, Embotellado
+            stageStartTimes = new DateTime[4];
             batchCount = 0;
 
             _inventoryManager = new InventoryManager(_ingredientesCollection);
@@ -82,6 +82,16 @@ namespace BrewScada
             fermentacionEndLabel = label20;
             embotelladoStartLabel = label23;
             embotelladoEndLabel = label22;
+
+            // Depuración de asignación de labels
+            Console.WriteLine($"moliendaStartLabel: {(moliendaStartLabel != null ? "OK" : "NULL")}");
+            Console.WriteLine($"moliendaEndLabel: {(moliendaEndLabel != null ? "OK" : "NULL")}");
+            Console.WriteLine($"coccionStartLabel: {(coccionStartLabel != null ? "OK" : "NULL")}");
+            Console.WriteLine($"coccionEndLabel: {(coccionEndLabel != null ? "OK" : "NULL")}");
+            Console.WriteLine($"fermentacionStartLabel: {(fermentacionStartLabel != null ? "OK" : "NULL")}");
+            Console.WriteLine($"fermentacionEndLabel: {(fermentacionEndLabel != null ? "OK" : "NULL")}");
+            Console.WriteLine($"embotelladoStartLabel: {(embotelladoStartLabel != null ? "OK" : "NULL")}");
+            Console.WriteLine($"embotelladoEndLabel: {(embotelladoEndLabel != null ? "OK" : "NULL")}");
         }
 
         private string GetConnectionStringFromConfig()
@@ -89,17 +99,24 @@ namespace BrewScada
             return "mongodb://localhost:27017";
         }
 
-        private void InitializeTimer()
+        private void InitializeTimers()
         {
-            _timer = new System.Timers.Timer(20000); // 20 segundos por etapa (simulación rápida)
-            _timer.Elapsed += OnTimedEvent;
-            _timer.AutoReset = true;
-            _timer.Enabled = false;
+            _processTimer = new System.Windows.Forms.Timer();
+            _processTimer.Interval = 20000; // 20 segundos por etapa
+            _processTimer.Tick += OnTimedEvent;
+            _processTimer.Enabled = false;
+
+            _delayTimer = new System.Windows.Forms.Timer();
+            _delayTimer.Interval = 10000; // 10 segundos de retraso
+            _delayTimer.Tick += OnDelayTimerTick;
+            _delayTimer.Enabled = false;
         }
 
-        private void OnTimedEvent(object source, ElapsedEventArgs e)
+        private void OnTimedEvent(object sender, EventArgs e)
         {
             if (!isRunning || isPaused) return;
+
+            Console.WriteLine($"OnTimedEvent triggered at {DateTime.Now}, Stage: {stage}"); // Depuración
 
             // Generamos un nuevo currentBatchName para cada batch al inicio
             if (stage == 0)
@@ -107,11 +124,10 @@ namespace BrewScada
                 currentBatchName = "Batch_" + GetNextBatchNumber().ToString("D4");
                 UpdateUI(() =>
                 {
-                    label24.Text = $"Batch: {currentBatchName}"; // Molienda
-                    label25.Text = $"Batch: {currentBatchName}"; // Cocción
-                    label26.Text = $"Batch: {currentBatchName}"; // Fermentación
-                    label27.Text = $"Batch: {currentBatchName}"; // Embotellado
-                    // Reiniciamos los labels de inicio y fin
+                    label24.Text = $"Batch: {currentBatchName}";
+                    label25.Text = $"Batch: {currentBatchName}";
+                    label26.Text = $"Batch: {currentBatchName}";
+                    label27.Text = $"Batch: {currentBatchName}";
                     moliendaStartLabel.Text = "--/--/---- --:--:--";
                     moliendaEndLabel.Text = "--/--/---- --:--:--";
                     coccionStartLabel.Text = "--/--/---- --:--:--";
@@ -127,159 +143,203 @@ namespace BrewScada
             switch (stage)
             {
                 case 0: // Molienda
-                    batchStartTime = DateTime.Now; // Establecemos el inicio del lote al comenzar Molienda
+                    batchStartTime = DateTime.Now;
                     stageStartTimes[stage] = batchStartTime;
-                    cantidadMalta = 200m; // Fijo: 200 kg de Malta (para 1,000 botellas por batch)
-                    decimal molienda = ProcesarMolienda(cantidadMalta); // Procesamos 200 kg
+                    cantidadMalta = 200m;
+                    decimal molienda = ProcesarMolienda(cantidadMalta);
                     decimal sobranteMalta = almacenMalta - cantidadMalta;
-                    almacenMalta = sobranteMalta; // Actualizamos el inventario
+                    almacenMalta = sobranteMalta;
                     batchDetails = FormatearDetallesProceso($"Molienda:{molienda:F3} kg de Malta", $"Sobrante Malta: {sobranteMalta:F3} kg");
-                    DateTime moliendaEnd = batchStartTime.AddMinutes(15); // Fin de Molienda después de 15 minutos
+                    DateTime moliendaEnd = batchStartTime.AddMinutes(15);
                     UpdateUI(() =>
                     {
-                        label7.Text = $"{molienda:F3} kg de Malta"; // Usamos label7 para Molienda
-                        label7.Location = new Point(250, 339); // Mantemos posición original
+                        label7.Text = $"{molienda:F3} kg de Malta";
+                        label7.Location = new Point(250, 339);
                         label15.Text = $"Malta de cebada: {almacenMalta:F3} kg";
-                        progressBar1.Value = 25; // Progreso inicial (25% para Molienda)
+                        progressBar1.Value = 25;
                         progressLabel.Text = $"Progreso: {progressBar1.Value}%";
-                        moliendaStartLabel.Text = $"Inicio: {stageStartTimes[stage].ToString("dd/MM/yyyy HH:mm:ss")}";
-                        moliendaEndLabel.Text = $"Fin: {moliendaEnd.ToString("dd/MM/yyyy HH:mm:ss")}";
+                        if (moliendaStartLabel != null)
+                        {
+                            moliendaStartLabel.Text = $"Inicio: {stageStartTimes[stage].ToString("dd/MM/yyyy HH:mm:ss")}";
+                            Console.WriteLine($"Molienda Start set to: {moliendaStartLabel.Text}");
+                        }
+                        if (moliendaEndLabel != null)
+                        {
+                            moliendaEndLabel.Text = $"Fin: {moliendaEnd.ToString("dd/MM/yyyy HH:mm:ss")}";
+                            Console.WriteLine($"Molienda End set to: {moliendaEndLabel.Text}");
+                        }
+                        moliendaStartLabel?.Refresh();
+                        moliendaEndLabel?.Refresh();
                     });
                     stage++;
-                    CheckAndNotifyInventory();
                     break;
                 case 1: // Cocción
-                    stageStartTimes[stage] = batchStartTime.AddMinutes(15); // Inicio de Cocción después de 15 min (fin de Molienda)
-                    cantidadAgua = 1200m; // Fijo: 1,200 L de Agua (para 1,000 botellas por batch)
-                    decimal coccion = ProcesarCoccion(cantidadAgua); // Procesamos 1,200 L
+                    stageStartTimes[stage] = batchStartTime.AddMinutes(15);
+                    cantidadAgua = 1200m;
+                    decimal coccion = ProcesarCoccion(cantidadAgua);
                     decimal sobranteAgua = almacenAgua - cantidadAgua;
-                    almacenAgua = sobranteAgua; // Actualizamos el inventario
+                    almacenAgua = sobranteAgua;
                     batchDetails = FormatearDetallesProceso(batchDetails, $"Cocción: {coccion:F3} L de Agua", $"Sobrante Agua: {sobranteAgua:F3} L");
-                    DateTime coccionEnd = stageStartTimes[stage].AddMinutes(60); // Fin de Cocción después de 60 minutos
+                    DateTime coccionEnd = stageStartTimes[stage].AddMinutes(60);
                     UpdateUI(() =>
                     {
-                        label8.Text = $"{coccion:F3} L de Agua"; // Usamos label8 para Cocción
-                        label8.Location = new Point(630, 339); // Mantemos posición original
+                        label8.Text = $"{coccion:F3} L de Agua";
+                        label8.Location = new Point(630, 339);
                         label16.Text = $"Agua: {almacenAgua:F3} L";
-                        progressBar1.Value = 50; // Progreso inicial (50% para Cocción)
+                        progressBar1.Value = 50;
                         progressLabel.Text = $"Progreso: {progressBar1.Value}%";
-                        coccionStartLabel.Text = $"Inicio: {stageStartTimes[stage].ToString("dd/MM/yyyy HH:mm:ss")}";
-                        coccionEndLabel.Text = $"Fin: {coccionEnd.ToString("dd/MM/yyyy HH:mm:ss")}";
+                        if (coccionStartLabel != null)
+                        {
+                            coccionStartLabel.Text = $"Inicio: {stageStartTimes[stage].ToString("dd/MM/yyyy HH:mm:ss")}";
+                            Console.WriteLine($"Cocción Start set to: {coccionStartLabel.Text}");
+                        }
+                        if (coccionEndLabel != null)
+                        {
+                            coccionEndLabel.Text = $"Fin: {coccionEnd.ToString("dd/MM/yyyy HH:mm:ss")}";
+                            Console.WriteLine($"Cocción End set to: {coccionEndLabel.Text}");
+                        }
+                        coccionStartLabel?.Refresh();
+                        coccionEndLabel?.Refresh();
                     });
                     stage++;
-                    CheckAndNotifyInventory();
                     break;
                 case 2: // Fermentación
-                    stageStartTimes[stage] = batchStartTime.AddMinutes(75); // Inicio de Fermentación después de 75 min (fin de Cocción)
-                    cantidadLevadura = 0.75m; // Fijo: 0.75 kg de Levadura (para 1,000 botellas por batch)
-                    decimal fermentacion = ProcesarFermentacion(cantidadLevadura); // Procesamos 0.75 kg de Levadura
+                    stageStartTimes[stage] = batchStartTime.AddMinutes(75);
+                    cantidadLevadura = 0.75m;
+                    decimal fermentacion = ProcesarFermentacion(cantidadLevadura);
                     decimal sobranteLevadura = almacenLevadura - cantidadLevadura;
-                    almacenLevadura = sobranteLevadura; // Actualizamos el inventario de Levadura
-                    batchDetails = FormatearDetallesProceso(batchDetails, $"Fermentación: {fermentacion:F3} kg de Levadura",
-                        $"Sobrante Levadura: {sobranteLevadura:F3} kg");
-                    DateTime fermentacionEnd = stageStartTimes[stage].AddMinutes(240); // Fin de Fermentación después de 240 minutos
+                    almacenLevadura = sobranteLevadura;
+                    batchDetails = FormatearDetallesProceso(batchDetails, $"Fermentación: {fermentacion:F3} kg de Levadura", $"Sobrante Levadura: {sobranteLevadura:F3} kg");
+                    DateTime fermentacionEnd = stageStartTimes[stage].AddMinutes(240);
                     UpdateUI(() =>
                     {
-                        label9.Text = $"{fermentacion:F3} kg de Levadura"; // Usamos label9 para Fermentación
-                        label9.Location = new Point(1100, 339); // Mantemos posición original
-                        label17.Text = $"Levadura: {almacenLevadura:F3} kg"; // Mostramos el inventario en kg
-                        progressBar1.Value = 75; // Progreso inicial (75% para Fermentación)
+                        label9.Text = $"{fermentacion:F3} kg de Levadura";
+                        label9.Location = new Point(1100, 339);
+                        label17.Text = $"Levadura: {almacenLevadura:F3} kg";
+                        progressBar1.Value = 75;
                         progressLabel.Text = $"Progreso: {progressBar1.Value}%";
-                        fermentacionStartLabel.Text = $"Inicio: {stageStartTimes[stage].ToString("dd/MM/yyyy HH:mm:ss")}";
-                        fermentacionEndLabel.Text = $"Fin: {fermentacionEnd.ToString("dd/MM/yyyy HH:mm:ss")}";
+                        if (fermentacionStartLabel != null)
+                        {
+                            fermentacionStartLabel.Text = $"Inicio: {stageStartTimes[stage].ToString("dd/MM/yyyy HH:mm:ss")}";
+                            Console.WriteLine($"Fermentación Start set to: {fermentacionStartLabel.Text}");
+                        }
+                        if (fermentacionEndLabel != null)
+                        {
+                            fermentacionEndLabel.Text = $"Fin: {fermentacionEnd.ToString("dd/MM/yyyy HH:mm:ss")}";
+                            Console.WriteLine($"Fermentación End set to: {fermentacionEndLabel.Text}");
+                        }
+                        fermentacionStartLabel?.Refresh();
+                        fermentacionEndLabel?.Refresh();
                     });
                     stage++;
-                    CheckAndNotifyInventory();
                     break;
                 case 3: // Embotellado
-                    stageStartTimes[stage] = batchStartTime.AddMinutes(315); // Inicio de Embotellado después de 315 min (fin de Fermentación)
-                    cantidadBotellas = 1000m; // Fijo: 1,000 botellas por batch
-                    decimal embotellado = ProcesarEmbotellado(cantidadBotellas); // Procesamos 1,000 botellas
+                    stageStartTimes[stage] = batchStartTime.AddMinutes(315);
+                    cantidadBotellas = 1000m;
+                    decimal embotellado = ProcesarEmbotellado(cantidadBotellas);
                     decimal sobranteBotellas = almacenBotellas - cantidadBotellas;
-                    almacenBotellas = sobranteBotellas; // Actualizamos el inventario de botellas vacías
+                    almacenBotellas = sobranteBotellas;
                     batchDetails = FormatearDetallesProceso(batchDetails, $"Embotellado: {Math.Round(embotellado):F0} botellas", $"Sobrante Botellas: {sobranteBotellas:F0} botellas");
-                    DateTime embotelladoEnd = stageStartTimes[stage].AddMinutes(30); // Fin de Embotellado después de 30 minutos
-                    GuardarBotellasLlenas(currentBatchName, Math.Round(embotellado), embotelladoEnd); // Guardamos las botellas llenas
+                    DateTime embotelladoEnd = stageStartTimes[stage].AddMinutes(30);
                     UpdateUI(() =>
                     {
-                        label10.Text = $"{Math.Round(embotellado):F0} botellas"; // Usamos label10 para Embotellado
-                        label10.Location = new Point(1100, 738); // Mantemos posición original
-                        label18.Text = $"Botellas: {almacenBotellas:F0}"; // Mostramos las botellas vacías restantes
-                        progressBar1.Value = 100; // 100% de progreso (completado)
+                        label10.Text = $"{Math.Round(embotellado):F0} botellas";
+                        label10.Location = new Point(1100, 738);
+                        label18.Text = $"Botellas: {almacenBotellas:F0}";
+                        progressBar1.Value = 100;
                         progressLabel.Text = $"Progreso: {progressBar1.Value}%";
-                        embotelladoStartLabel.Text = $"Inicio: {stageStartTimes[stage].ToString("dd/MM/yyyy HH:mm:ss")}";
-                        embotelladoEndLabel.Text = $"Fin: {embotelladoEnd.ToString("dd/MM/yyyy HH:mm:ss")}";
-                        // Actualizamos textBox1 con el batch actual sin duplicación
-                        if (textBox1 != null)
+                        if (embotelladoStartLabel != null)
                         {
-                            textBox1.Text += $"{currentBatchName}: {Math.Round(embotellado):F0} botellas\r\n";
+                            embotelladoStartLabel.Text = $"Inicio: {stageStartTimes[stage].ToString("dd/MM/yyyy HH:mm:ss")}";
+                            Console.WriteLine($"Embotellado Start set to: {embotelladoStartLabel.Text}");
                         }
-                    });
-                    // Reiniciamos los tiempos para el próximo batch, pero no las cantidades procesadas
-                    UpdateUI(() =>
-                    {
-                        moliendaStartLabel.Text = "--/--/---- --:--:--";
-                        moliendaEndLabel.Text = "--/--/---- --:--:--";
-                        coccionStartLabel.Text = "--/--/---- --:--:--";
-                        coccionEndLabel.Text = "--/--/---- --:--:--";
-                        fermentacionStartLabel.Text = "--/--/---- --:--:--";
-                        fermentacionEndLabel.Text = "--/--/---- --:--:--";
-                        embotelladoStartLabel.Text = "--/--/---- --:--:--";
-                        embotelladoEndLabel.Text = "--/--/---- --:--:--";
-                    });
-                    // Incrementamos el contador de batches
-                    batchCount++;
-                    if (batchCount < TOTAL_BATCHES)
-                    {
-                        stage = 0; // Reiniciamos el stage para el próximo batch
-                    }
-                    else
-                    {
-                        // Completados los 10 batches
-                        isRunning = false;
-                        _timer.Enabled = false;
-                        UpdateUI(() =>
+                        if (embotelladoEndLabel != null)
                         {
-                            button1.Text = "Empezar";
-                            button2.Text = "Pausar";
-                            progressLabel.Text = "Progreso: 100% (10,000 botellas completadas)";
-                        });
-                        batchCount = 0; // Reiniciamos el contador para un nuevo ciclo
-                    }
-                    CheckAndNotifyInventory();
+                            embotelladoEndLabel.Text = $"Fin: {embotelladoEnd.ToString("dd/MM/yyyy HH:mm:ss")}";
+                            Console.WriteLine($"Embotellado End set to: {embotelladoEndLabel.Text}");
+                        }
+                        embotelladoStartLabel?.Refresh();
+                        embotelladoEndLabel?.Refresh();
+                    });
+                    // Iniciamos el timer de retraso de 10 segundos
+                    _delayTimer.Enabled = true;
+                    _processTimer.Enabled = false; // Pausamos el timer principal
                     break;
             }
         }
 
+        private void OnDelayTimerTick(object sender, EventArgs e)
+        {
+            _delayTimer.Enabled = false; // Desactivamos el timer de retraso
+            GuardarBotellasLlenas(currentBatchName, Math.Round(cantidadBotellas), DateTime.Now);
+            UpdateUI(() =>
+            {
+                if (textBox1 != null)
+                    textBox1.Text += $"{currentBatchName}: {Math.Round(cantidadBotellas):F0} botellas\r\n";
+                // Reiniciamos la barra de progreso a 0%
+                progressBar1.Value = 0;
+                progressLabel.Text = $"Progreso: {progressBar1.Value}%";
+            });
+
+            // Reiniciamos para el próximo batch
+            UpdateUI(() =>
+            {
+                label7.Text = "0 kg de Malta";
+                label8.Text = "0 L de Agua";
+                label9.Text = "0 kg de Levadura";
+                label10.Text = "0 botellas";
+                moliendaStartLabel.Text = "--/--/---- --:--:--";
+                moliendaEndLabel.Text = "--/--/---- --:--:--";
+                coccionStartLabel.Text = "--/--/---- --:--:--";
+                coccionEndLabel.Text = "--/--/---- --:--:--";
+                fermentacionStartLabel.Text = "--/--/---- --:--:--";
+                fermentacionEndLabel.Text = "--/--/---- --:--:--";
+                embotelladoStartLabel.Text = "--/--/---- --:--:--";
+                embotelladoEndLabel.Text = "--/--/---- --:--:--";
+            });
+            batchCount++;
+            if (batchCount < TOTAL_BATCHES)
+            {
+                stage = 0;
+                _processTimer.Enabled = true; // Reiniciamos el timer principal
+            }
+            else
+            {
+                isRunning = false;
+                UpdateUI(() =>
+                {
+                    button1.Text = "Empezar";
+                    button2.Text = "Pausar";
+                    progressLabel.Text = "Progreso: 100% (10,000 botellas completadas)";
+                });
+                batchCount = 0;
+            }
+            CheckAndNotifyInventory();
+        }
+
         private void StartNextBatch()
         {
-            batchStartTime = DateTime.Now; // Registramos el inicio del nuevo lote
-            currentBatchName = "Batch_" + GetNextBatchNumber().ToString("D4"); // Guardamos el nombre del lote actual
+            batchStartTime = DateTime.Now;
+            currentBatchName = "Batch_" + GetNextBatchNumber().ToString("D4");
             UpdateUI(() =>
             {
                 button1.Text = "Empezar";
-                label7.Text = "0 kg de Malta"; // Reiniciamos con valor inicial
-                label7.Location = new Point(250, 339); // Mantemos posición original
-                label8.Text = "0 L de Agua";  // Reiniciamos con valor inicial
-                label8.Location = new Point(630, 339); // Mantemos posición original
-                label9.Text = "0 kg de Levadura"; // Reiniciamos con valor inicial
-                label9.Location = new Point(1100, 339); // Mantemos posición original
-                label10.Text = "0 botellas"; // Reiniciamos con valor inicial
-                label10.Location = new Point(1100, 738); // Mantemos posición original
-                progressBar1.Value = 0; // Reiniciamos la barra de progreso
-                progressLabel.Text = "Progreso: 0%";
-                // No cambiamos label1, lo mantenemos como título fijo "Almacén de productos terminados:"
-                // Reiniciamos textBox1 a vacío para el nuevo ciclo de batches
+                label7.Text = "0 kg de Malta";
+                label7.Location = new Point(250, 339);
+                label8.Text = "0 L de Agua";
+                label8.Location = new Point(630, 339);
+                label9.Text = "0 kg de Levadura";
+                label9.Location = new Point(1100, 339);
+                label10.Text = "0 botellas";
+                label10.Location = new Point(1100, 738);
+                progressBar1.Value = 0; // Reiniciamos la barra al 0% al iniciar un nuevo batch
+                progressLabel.Text = $"Progreso: {progressBar1.Value}%";
                 if (textBox1 != null)
-                {
-                    textBox1.Text = "";
-                }
-                // Actualizamos los labels de "Batch:" con el currentBatchName
-                label24.Text = $"Batch: {currentBatchName}"; // Molienda
-                label25.Text = $"Batch: {currentBatchName}"; // Cocción
-                label26.Text = $"Batch: {currentBatchName}"; // Fermentación
-                label27.Text = $"Batch: {currentBatchName}"; // Embotellado
-                // Reiniciamos los labels de inicio y fin de etapas
+                    textBox1.Text = ""; // Limpiamos el textBox al iniciar un nuevo batch
+                label24.Text = $"Batch: {currentBatchName}";
+                label25.Text = $"Batch: {currentBatchName}";
+                label26.Text = $"Batch: {currentBatchName}";
+                label27.Text = $"Batch: {currentBatchName}";
                 moliendaStartLabel.Text = "--/--/---- --:--:--";
                 moliendaEndLabel.Text = "--/--/---- --:--:--";
                 coccionStartLabel.Text = "--/--/---- --:--:--";
@@ -295,7 +355,7 @@ namespace BrewScada
                 BatchName = currentBatchName,
                 Status = "Started",
                 StartDate = batchStartTime,
-                EndDate = batchStartTime.AddMinutes(345) // Duración total estimada (15 + 60 + 240 + 30 = 345 minutos)
+                EndDate = batchStartTime.AddMinutes(345)
             };
 
             _produccionCollection.InsertOne(produccion);
@@ -304,12 +364,12 @@ namespace BrewScada
                 batchDetails = $"Batch {currentBatchName} Details:\n";
                 button1.Text = "En ejecución";
             });
-            _timer.Enabled = true;
+            _processTimer.Enabled = true;
             isRunning = true;
             stage = 0;
-            batchCount = 0; // Reiniciamos el contador de batches
-            CheckAndNotifyInventory(); // Verificamos inventario al iniciar un nuevo lote
-            Array.Clear(stageStartTimes, 0, stageStartTimes.Length); // Reiniciamos los tiempos de las etapas
+            batchCount = 0;
+            CheckAndNotifyInventory();
+            Array.Clear(stageStartTimes, 0, stageStartTimes.Length);
         }
 
         private void UpdateUI(Action action)
@@ -326,30 +386,30 @@ namespace BrewScada
 
         private decimal ProcesarMolienda(decimal cantidadMalta)
         {
-            return cantidadMalta; // Usamos toda la cantidad de Malta (200 kg) sin pérdida
+            return cantidadMalta;
         }
 
         private decimal ProcesarCoccion(decimal cantidadAgua)
         {
-            return cantidadAgua; // Usamos toda la cantidad de Agua (1,200 L) sin pérdida
+            return cantidadAgua;
         }
 
         private decimal ProcesarFermentacion(decimal cantidadLevadura)
         {
-            return cantidadLevadura; // Usamos toda la cantidad de Levadura (0.75 kg) sin pérdida
+            return cantidadLevadura;
         }
 
         private decimal ProcesarEmbotellado(decimal cantidadBotellas)
         {
-            return cantidadBotellas; // Usamos exactamente 1,000 botellas sin pérdida
+            return cantidadBotellas;
         }
 
         private Tuple<decimal, decimal, decimal, decimal, decimal> CalcularTiemposDeProceso()
         {
-            decimal molienda = 15m; // 15 minutos
-            decimal coccion = 60m; // 60 minutos
-            decimal fermentacion = 240m; // 240 minutos
-            decimal embotellado = 30m; // 30 minutos
+            decimal molienda = 15m;
+            decimal coccion = 60m;
+            decimal fermentacion = 240m;
+            decimal embotellado = 30m;
             decimal fermentacionTanque = 5m;
             decimal maduracionTanque = 10m;
             decimal totalTanque = fermentacionTanque + maduracionTanque;
@@ -367,43 +427,39 @@ namespace BrewScada
 
             isRunning = true;
             int nextBatchNumber = GetNextBatchNumber();
+            currentBatchName = "Batch_" + nextBatchNumber.ToString("D4"); // Asignamos el nombre del batch aquí
             var produccion = new Produccion
             {
-                BatchName = "Batch_" + nextBatchNumber.ToString("D4"),
+                BatchName = currentBatchName,
                 Status = "Started",
                 StartDate = DateTime.Now,
-                EndDate = DateTime.Now.AddMinutes(345) // Duración total estimada (15 + 60 + 240 + 30 = 345 minutos)
+                EndDate = DateTime.Now.AddMinutes(345)
             };
 
             _produccionCollection.InsertOne(produccion);
             UpdateUI(() =>
             {
-                // No cambiamos label1, lo mantenemos como "Almacén de productos terminados:"
-                batchDetails = $"Batch {produccion.BatchName} Details:\n";
+                batchDetails = $"Batch {currentBatchName} Details:\n";
                 button1.Text = "En ejecución";
-                label7.Text = "0 kg de Malta"; // Reiniciamos con valor inicial
-                label7.Location = new Point(250, 339); // Mantemos posición original
-                label8.Text = "0 L de Agua";  // Reiniciamos con valor inicial
-                label8.Location = new Point(630, 339); // Mantemos posición original
-                label9.Text = "0 kg de Levadura"; // Reiniciamos con valor inicial
-                label9.Location = new Point(1100, 339); // Mantemos posición original
-                label10.Text = "0 botellas"; // Reiniciamos con valor inicial
-                label10.Location = new Point(1100, 738); // Mantemos posición original
-                // Reiniciamos textBox1 a vacío para el nuevo batch
+                label7.Text = "0 kg de Malta";
+                label7.Location = new Point(250, 339);
+                label8.Text = "0 L de Agua";
+                label8.Location = new Point(630, 339);
+                label9.Text = "0 kg de Levadura";
+                label9.Location = new Point(1100, 339);
+                label10.Text = "0 botellas";
+                label10.Location = new Point(1100, 738);
                 if (textBox1 != null)
-                {
-                    textBox1.Text = "";
-                }
-                // Actualizamos los labels de "Batch:" con el currentBatchName
-                label24.Text = $"Batch: {produccion.BatchName}"; // Molienda
-                label25.Text = $"Batch: {produccion.BatchName}"; // Cocción
-                label26.Text = $"Batch: {produccion.BatchName}"; // Fermentación
-                label27.Text = $"Batch: {produccion.BatchName}"; // Embotellado
+                    textBox1.Text = ""; // Limpiamos el textBox al iniciar
+                label24.Text = $"Batch: {currentBatchName}";
+                label25.Text = $"Batch: {currentBatchName}";
+                label26.Text = $"Batch: {currentBatchName}";
+                label27.Text = $"Batch: {currentBatchName}";
             });
-            _timer.Enabled = true;
+            _processTimer.Enabled = true;
             stage = 0;
-            batchCount = 0; // Reiniciamos el contador de batches
-            CheckAndNotifyInventory(); // Verificamos inventario al iniciar
+            batchCount = 0;
+            CheckAndNotifyInventory();
         }
 
         private int GetNextBatchNumber()
@@ -460,135 +516,117 @@ namespace BrewScada
             {
                 isPaused = false;
                 button2.Text = "Pausar";
-                _timer.Enabled = true; // Reanudamos el timer
+                _processTimer.Enabled = true;
             }
             else
             {
                 isPaused = true;
                 button2.Text = "Continuar";
-                _timer.Enabled = false; // Pausamos el timer
+                _processTimer.Enabled = false;
             }
         }
 
-        // Botón de "Parar" (Autocompletar etapas restantes)
         private void button3_Click(object sender, EventArgs e)
         {
             if (isRunning || isPaused)
             {
-                // Si el proceso está en ejecución, completar las etapas restantes automáticamente
+                // Completar las etapas restantes automáticamente
                 while (stage < 4) // 4 etapas: Molienda (0), Cocción (1), Fermentación (2), Embotellado (3)
                 {
                     switch (stage)
                     {
                         case 0: // Molienda
-                            batchStartTime = DateTime.Now; // Reiniciamos el tiempo de inicio para simular la etapa
+                            batchStartTime = DateTime.Now;
                             stageStartTimes[stage] = batchStartTime;
-                            cantidadMalta = 200m; // Fijo: 200 kg de Malta por batch
+                            cantidadMalta = 200m;
                             decimal molienda = ProcesarMolienda(cantidadMalta);
                             decimal sobranteMalta = almacenMalta - cantidadMalta;
-                            almacenMalta = sobranteMalta; // Actualizamos el inventario
-                            batchDetails = FormatearDetallesProceso($"Molienda: {molienda:F3} kg de Malta", $"Sobrante Malta: {sobranteMalta:F3} kg");
+                            almacenMalta = sobranteMalta;
                             DateTime moliendaEnd = batchStartTime.AddMinutes(15); // Fin de Molienda después de 15 minutos
                             UpdateUI(() =>
                             {
-                                label7.Text = $"{molienda:F3} kg de Malta"; // Mostramos la cantidad procesada
+                                label7.Text = $"{molienda:F2} kg";
                                 moliendaStartLabel.Text = $"Inicio: {stageStartTimes[stage].ToString("dd/MM/yyyy HH:mm:ss")}";
                                 moliendaEndLabel.Text = $"Fin: {moliendaEnd.ToString("dd/MM/yyyy HH:mm:ss")}";
                             });
                             break;
                         case 1: // Cocción
-                            stageStartTimes[stage] = batchStartTime.AddMinutes(15); // Inicio de Cocción
-                            cantidadAgua = 1200m; // Fijo: 1200 L de Agua por batch
+                            stageStartTimes[stage] = batchStartTime.AddMinutes(15);
+                            cantidadAgua = 1200m;
                             decimal coccion = ProcesarCoccion(cantidadAgua);
                             decimal sobranteAgua = almacenAgua - cantidadAgua;
-                            almacenAgua = sobranteAgua; // Actualizamos el inventario
-                            batchDetails = FormatearDetallesProceso(batchDetails, $"Cocción: {coccion:F3} L de Agua", $"Sobrante Agua: {sobranteAgua:F3} L");
+                            almacenAgua = sobranteAgua;
                             DateTime coccionEnd = stageStartTimes[stage].AddMinutes(60); // Fin de Cocción después de 60 minutos
                             UpdateUI(() =>
                             {
-                                label8.Text = $"{coccion:F3} L de Agua"; // Mostramos la cantidad procesada
+                                label8.Text = $"{coccion:F2} L";
                                 coccionStartLabel.Text = $"Inicio: {stageStartTimes[stage].ToString("dd/MM/yyyy HH:mm:ss")}";
                                 coccionEndLabel.Text = $"Fin: {coccionEnd.ToString("dd/MM/yyyy HH:mm:ss")}";
                             });
                             break;
                         case 2: // Fermentación
-                            stageStartTimes[stage] = batchStartTime.AddMinutes(75); // Inicio de Fermentación
-                            cantidadLevadura = 0.75m; // Fijo: 0.75 kg de Levadura por batch
+                            stageStartTimes[stage] = batchStartTime.AddMinutes(75);
+                            cantidadLevadura = 0.75m;
                             decimal fermentacion = ProcesarFermentacion(cantidadLevadura);
                             decimal sobranteLevadura = almacenLevadura - cantidadLevadura;
-                            almacenLevadura = sobranteLevadura; // Actualizamos el inventario
-                            batchDetails = FormatearDetallesProceso(batchDetails, $"Fermentación: {fermentacion:F3} kg de Levadura", $"Sobrante Levadura: {sobranteLevadura:F3} kg");
+                            almacenLevadura = sobranteLevadura;
                             DateTime fermentacionEnd = stageStartTimes[stage].AddMinutes(240); // Fin de Fermentación después de 240 minutos
                             UpdateUI(() =>
                             {
-                                label9.Text = $"{fermentacion:F3} kg de Levadura"; // Mostramos la cantidad procesada
+                                label9.Text = $"{fermentacion:F2} kg";
                                 fermentacionStartLabel.Text = $"Inicio: {stageStartTimes[stage].ToString("dd/MM/yyyy HH:mm:ss")}";
                                 fermentacionEndLabel.Text = $"Fin: {fermentacionEnd.ToString("dd/MM/yyyy HH:mm:ss")}";
                             });
                             break;
                         case 3: // Embotellado
-                            stageStartTimes[stage] = batchStartTime.AddMinutes(315); // Inicio de Embotellado
-                            cantidadBotellas = 1000m; // Fijo: 1000 botellas por batch
+                            stageStartTimes[stage] = batchStartTime.AddMinutes(315);
+                            cantidadBotellas = 1000m;
                             decimal embotellado = ProcesarEmbotellado(cantidadBotellas);
                             decimal sobranteBotellas = almacenBotellas - cantidadBotellas;
-                            almacenBotellas = sobranteBotellas; // Actualizamos el inventario
-                            batchDetails = FormatearDetallesProceso(batchDetails, $"Embotellado: {Math.Round(embotellado):F0} botellas", $"Sobrante Botellas: {sobranteBotellas:F0} botellas");
+                            almacenBotellas = sobranteBotellas;
                             DateTime embotelladoEnd = stageStartTimes[stage].AddMinutes(30); // Fin de Embotellado después de 30 minutos
-                            GuardarBotellasLlenas(currentBatchName, Math.Round(embotellado), embotelladoEnd); // Guardamos en la base de datos
                             UpdateUI(() =>
                             {
-                                label10.Text = $"{Math.Round(embotellado):F0} botellas"; // Mostramos la cantidad procesada
+                                label10.Text = $"{Math.Round(embotellado):F0} botellas";
                                 embotelladoStartLabel.Text = $"Inicio: {stageStartTimes[stage].ToString("dd/MM/yyyy HH:mm:ss")}";
                                 embotelladoEndLabel.Text = $"Fin: {embotelladoEnd.ToString("dd/MM/yyyy HH:mm:ss")}";
+                                // Solo actualizamos textBox1 con el resultado del embotellado
+                                if (textBox1 != null)
+                                    textBox1.Text = $"{currentBatchName}: {Math.Round(embotellado):F0} botellas\r\n";
                             });
                             break;
                     }
                     stage++; // Avanzar a la siguiente etapa
                 }
 
-                // Actualizar la interfaz con los detalles del batch completado
+                // Actualizar la interfaz con el progreso completo y reiniciar
                 UpdateUI(() =>
                 {
-                    textBox1.Text = batchDetails; // Mostrar todos los detalles del proceso
-                    label15.Text = $"Malta de cebada: {almacenMalta:F3} kg"; // Actualizamos el inventario de malta
-                    label16.Text = $"Agua: {almacenAgua:F3} L"; // Actualizamos el inventario de agua
-                    label17.Text = $"Levadura: {almacenLevadura:F3} kg"; // Actualizamos el inventario de levadura
-                    label18.Text = $"Botellas: {almacenBotellas:F0}"; // Actualizamos el inventario de botellas
-                    progressBar1.Value = 100; // Completar el progreso
-                    progressLabel.Text = "Progreso: 100%";
+                    label15.Text = $"Malta de cebada: {almacenMalta:F3} kg";
+                    label16.Text = $"Agua: {almacenAgua:F3} L";
+                    label17.Text = $"Levadura: {almacenLevadura:F3} kg";
+                    label18.Text = $"Botellas: {almacenBotellas:F0}";
+                    progressBar1.Value = 100;
+                    progressLabel.Text = $"Progreso: {progressBar1.Value}%";
                 });
 
-                // Actualizar el fin del lote en la base de datos
-                UpdateBatchEndTime(DateTime.Now);
+                // Simulamos el retraso de 10 segundos y el traslado al almacén
+                _delayTimer.Enabled = true;
+                _processTimer.Enabled = false; // Pausamos el timer principal
 
-                // Incrementamos el contador de batches (para respetar los 10 batches)
-                batchCount++;
-                if (batchCount < TOTAL_BATCHES)
-                {
-                    stage = 0; // Reiniciamos el stage para el próximo batch si no se han completado los 10
-                }
-                else
-                {
-                    isRunning = false;
-                    _timer.Enabled = false;
-                    UpdateUI(() =>
-                    {
-                        button1.Text = "Empezar";
-                        button2.Text = "Pausar";
-                        progressLabel.Text = "Progreso: 100% (10,000 botellas completadas)";
-                    });
-                    batchCount = 0; // Reiniciamos el contador para un nuevo ciclo
-                }
-
-                // Detener el proceso
+                // Detener el proceso completamente
                 isRunning = false;
                 isPaused = false;
-                _timer.Stop();
+                UpdateUI(() =>
+                {
+                    button1.Text = "Empezar"; // Cambiamos el botón a "Empezar"
+                });
 
-                // Mostrar el mensaje de batch completado
+                // Guardar el fin del lote en la base de datos
+                UpdateBatchEndTime(DateTime.Now);
+
+                // Mostrar mensaje de finalización
                 MessageBox.Show($"El batch {currentBatchName} se ha completado exitosamente.", "Proceso Finalizado", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                CheckAndNotifyInventory(); // Verificamos el estado del inventario tras el proceso
             }
             else
             {
@@ -613,7 +651,7 @@ namespace BrewScada
 
         private void label3_Click(object sender, EventArgs e)
         {
-            // Lógica para el evento del label (aunque ya no usamos label3 para detalles)
+            // Lógica para el evento del label
         }
 
         private void pictureBox5_Click(object sender, EventArgs e)
@@ -623,17 +661,16 @@ namespace BrewScada
 
         private void label11_Click(object sender, EventArgs e)
         {
-            // Lógica para el evento del label (este es el nuevo label11, ajusta según necesites)
+            // Lógica para el evento del label
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            var dateTimeTimer = new System.Windows.Forms.Timer(); // Usamos System.Windows.Forms.Timer explícitamente
-            dateTimeTimer.Interval = 1000; // 1 segundo
+            var dateTimeTimer = new System.Windows.Forms.Timer();
+            dateTimeTimer.Interval = 1000;
             dateTimeTimer.Tick += UpdateDateTimeLabel;
             dateTimeTimer.Start();
-            CheckAndNotifyInventory(); // Verificamos inventario al cargar
-            // Actualizamos los labels del almacén con los valores iniciales al cargar
+            CheckAndNotifyInventory();
             UpdateUI(() =>
             {
                 label15.Text = $"Malta de cebada: {almacenMalta:F3} kg";
@@ -641,8 +678,6 @@ namespace BrewScada
                 label17.Text = $"Levadura: {almacenLevadura:F3} kg";
                 label18.Text = $"Botellas: {almacenBotellas:F0}";
             });
-
-            // Inicializamos los ingredientes en la base de datos si no existen
             InitializeInventory();
         }
 
@@ -653,7 +688,7 @@ namespace BrewScada
 
         private void dateTimeLabel_Click(object sender, EventArgs e)
         {
-            // Lógica para el evento del dateTimeLabel (si aplica)
+            // Lógica para el evento del dateTimeLabel
         }
 
         private void CheckAndNotifyInventory()
@@ -691,7 +726,6 @@ namespace BrewScada
                     }
                     else
                     {
-                        // Restaurar color por defecto si el inventario está bien
                         label15.ForeColor = SystemColors.ControlText;
                         label16.ForeColor = SystemColors.ControlText;
                         label17.ForeColor = SystemColors.ControlText;
@@ -707,85 +741,22 @@ namespace BrewScada
         {
             var ingredientes = _inventoryManager.GetAllIngredientes();
             if (!ingredientes.Exists(i => i.Nombre.ToLower() == "malta"))
-            {
-                _inventoryManager.AddIngrediente(new Ingrediente { Nombre = "Malta", Cantidad = 2000m, UmbralMinimo = 200m }); // Umbral mínimo ajustado
-            }
+                _inventoryManager.AddIngrediente(new Ingrediente { Nombre = "Malta", Cantidad = 2000m, UmbralMinimo = 200m });
             if (!ingredientes.Exists(i => i.Nombre.ToLower() == "agua"))
-            {
-                _inventoryManager.AddIngrediente(new Ingrediente { Nombre = "Agua", Cantidad = 12000m, UmbralMinimo = 1200m }); // Umbral mínimo ajustado
-            }
+                _inventoryManager.AddIngrediente(new Ingrediente { Nombre = "Agua", Cantidad = 12000m, UmbralMinimo = 1200m });
             if (!ingredientes.Exists(i => i.Nombre.ToLower() == "levadura"))
-            {
-                _inventoryManager.AddIngrediente(new Ingrediente { Nombre = "Levadura", Cantidad = 30m, UmbralMinimo = 0.75m }); // Umbral mínimo ajustado al uso por batch
-            }
+                _inventoryManager.AddIngrediente(new Ingrediente { Nombre = "Levadura", Cantidad = 30m, UmbralMinimo = 0.75m });
             if (!ingredientes.Exists(i => i.Nombre.ToLower() == "botellas"))
-            {
-                _inventoryManager.AddIngrediente(new Ingrediente { Nombre = "Botellas", Cantidad = 10000m, UmbralMinimo = 1000m }); // Mantenemos umbral mínimo
-            }
+                _inventoryManager.AddIngrediente(new Ingrediente { Nombre = "Botellas", Cantidad = 10000m, UmbralMinimo = 1000m });
         }
 
-        // Comentado porque restockButton no está en el diseñador
-        /*
-        private void restockButton_Click(object sender, EventArgs e)
-        {
-            // Reabastecemos los inventarios a sus valores iniciales
-            almacenMalta = 2000m;
-            almacenAgua = 12000m;
-            almacenLevadura = 30m;
-            almacenBotellas = 10000m;
-
-            // Actualizamos los labels y la base de datos
-            UpdateUI(() =>
-            {
-                label15.Text = $"Malta de cebada: {almacenMalta:F3} kg";
-                label16.Text = $"Agua: {almacenAgua:F3} L";
-                label17.Text = $"Levadura: {almacenLevadura:F3} kg";
-                label18.Text = $"Botellas: {almacenBotellas:F0}";
-                label15.ForeColor = SystemColors.ControlText;
-                label16.ForeColor = SystemColors.ControlText;
-                label17.ForeColor = SystemColors.ControlText;
-                label18.ForeColor = SystemColors.ControlText;
-                inventoryStatusLabel.Text = "Estado del inventario: Normal";
-                inventoryStatusLabel.ForeColor = SystemColors.ControlText;
-            });
-
-            // Actualizamos la base de datos
-            var ingredientes = _inventoryManager.GetAllIngredientes();
-            foreach (var ingrediente in ingredientes)
-            {
-                decimal cantidadInicial = 0m;
-                switch (ingrediente.Nombre.ToLower())
-                {
-                    case "malta":
-                        cantidadInicial = 2000m;
-                        break;
-                    case "agua":
-                        cantidadInicial = 12000m;
-                        break;
-                    case "levadura":
-                        cantidadInicial = 30m;
-                        break;
-                    case "botellas":
-                        cantidadInicial = 10000m;
-                        break;
-                }
-                _inventoryManager.UpdateIngredienteQuantity(ingrediente.Nombre, cantidadInicial);
-            }
-
-            MessageBox.Show("Inventario reabastecido exitosamente.");
-        }
-        */
-
-        private void restockButton_Click_2(object sender, EventArgs e) // Método para reiniciar el "Almacén de productos terminados"
+        private void restockButton_Click_2(object sender, EventArgs e)
         {
             UpdateUI(() =>
             {
                 if (textBox1 != null)
-                {
-                    textBox1.Text = ""; // Reiniciamos textBox1 a vacío
-                }
+                    textBox1.Text = "";
             });
-            // Limpiamos los datos en MongoDB (opcional, para reinicio completo)
             var filter = Builders<BsonDocument>.Filter.Empty;
             _batchesBotellasCollection.DeleteMany(filter);
             MessageBox.Show("Almacén de botellas llenas reiniciado exitosamente.");
@@ -793,8 +764,6 @@ namespace BrewScada
 
         private void UpdateBatchEndTime(DateTime endTime)
         {
-            // Eliminamos referencias a batchEndLabel para evitar NullReferenceException
-            // Actualizamos el EndDate en la base de datos para el lote actual
             var filter = Builders<Produccion>.Filter.Eq(p => p.BatchName, currentBatchName);
             var update = Builders<Produccion>.Update.Set(p => p.EndDate, endTime);
             _produccionCollection.UpdateOne(filter, update);
@@ -803,9 +772,7 @@ namespace BrewScada
         private void GuardarBotellasLlenas(string batchName, decimal cantidad, DateTime fechaProduccion)
         {
             if (string.IsNullOrEmpty(batchName))
-            {
-                batchName = "Batch_Unknown"; // Valor por defecto si batchName es nulo
-            }
+                batchName = "Batch_Unknown";
             var document = new BsonDocument
             {
                 { "BatchName", batchName },
