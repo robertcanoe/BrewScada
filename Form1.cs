@@ -216,10 +216,6 @@ namespace BrewScada
                         decimal sobranteAgua = almacenAgua - cantidadAgua;
                         almacenAgua = sobranteAgua;
                         batchDetails = FormatearDetallesProceso(batchDetails, $"Cocción: {coccion:F3} L de Agua", $"Sobrante Agua: {sobranteAgua:F3} L");
-                    }
-                    if (stageUpdates[stage] == 2)
-                    {
-                        DateTime coccionEnd = stageStartTimes[stage].AddHours(2); // 2 horas = 15 segundos
                         UpdateUI(() =>
                         {
                             label8.Text = $"{cantidadAgua:F3} L de Agua";
@@ -230,6 +226,13 @@ namespace BrewScada
                                 coccionStartLabel.Text = $"Inicio: {stageStartTimes[stage].ToString("dd/MM/yyyy HH:mm:ss")}";
                                 Console.WriteLine($"Cocción Start set to: {coccionStartLabel.Text}");
                             }
+                        });
+                    }
+                    if (stageUpdates[stage] == 2)
+                    {
+                        DateTime coccionEnd = stageStartTimes[stage].AddHours(2); // 2 horas = 15 segundos
+                        UpdateUI(() =>
+                        {
                             if (coccionEndLabel != null)
                             {
                                 coccionEndLabel.Text = $"Fin: {coccionEnd.ToString("dd/MM/yyyy HH:mm:ss")}";
@@ -251,10 +254,6 @@ namespace BrewScada
                         decimal sobranteLevadura = almacenLevadura - cantidadLevadura;
                         almacenLevadura = sobranteLevadura;
                         batchDetails = FormatearDetallesProceso(batchDetails, $"Fermentación: {fermentacion:F3} kg de Levadura", $"Sobrante Levadura: {sobranteLevadura:F3} kg");
-                    }
-                    if (stageUpdates[stage] == 96)
-                    {
-                        DateTime fermentacionEnd = stageStartTimes[stage].AddHours(96); // 96 horas = 720 segundos
                         UpdateUI(() =>
                         {
                             label9.Text = $"{cantidadLevadura:F3} kg de Levadura";
@@ -265,6 +264,13 @@ namespace BrewScada
                                 fermentacionStartLabel.Text = $"Inicio: {stageStartTimes[stage].ToString("dd/MM/yyyy HH:mm:ss")}";
                                 Console.WriteLine($"Fermentación Start set to: {fermentacionStartLabel.Text}");
                             }
+                        });
+                    }
+                    if (stageUpdates[stage] == 96)
+                    {
+                        DateTime fermentacionEnd = stageStartTimes[stage].AddHours(96); // 96 horas = 720 segundos
+                        UpdateUI(() =>
+                        {
                             if (fermentacionEndLabel != null)
                             {
                                 fermentacionEndLabel.Text = $"Fin: {fermentacionEnd.ToString("dd/MM/yyyy HH:mm:ss")}";
@@ -286,10 +292,6 @@ namespace BrewScada
                         decimal sobranteBotellas = almacenBotellas - cantidadBotellas;
                         almacenBotellas = sobranteBotellas;
                         batchDetails = FormatearDetallesProceso(batchDetails, $"Embotellado: {Math.Round(embotellado):F0} botellas", $"Sobrante Botellas: {sobranteBotellas:F0} botellas");
-                    }
-                    if (stageUpdates[stage] == 4)
-                    {
-                        DateTime embotelladoEnd = stageStartTimes[stage].AddHours(4); // 4 horas = 30 segundos
                         UpdateUI(() =>
                         {
                             label10.Text = $"{Math.Round(cantidadBotellas):F0} botellas";
@@ -300,6 +302,13 @@ namespace BrewScada
                                 embotelladoStartLabel.Text = $"Inicio: {stageStartTimes[stage].ToString("dd/MM/yyyy HH:mm:ss")}";
                                 Console.WriteLine($"Embotellado Start set to: {embotelladoStartLabel.Text}");
                             }
+                        });
+                    }
+                    if (stageUpdates[stage] == 4)
+                    {
+                        DateTime embotelladoEnd = stageStartTimes[stage].AddHours(4); // 4 horas = 30 segundos
+                        UpdateUI(() =>
+                        {
                             if (embotelladoEndLabel != null)
                             {
                                 embotelladoEndLabel.Text = $"Fin: {embotelladoEnd.ToString("dd/MM/yyyy HH:mm:ss")}";
@@ -657,7 +666,7 @@ namespace BrewScada
         {
             if (isRunning || isPaused)
             {
-                // Completar las etapas restantes automáticamente
+                // Completar las etapas restantes automáticamente y consumir todas las materias primas como un batch normal
                 while (stage < 4) // 4 etapas: Molienda (0), Cocción (1), Fermentación (2), Embotellado (3)
                 {
                     switch (stage)
@@ -665,11 +674,11 @@ namespace BrewScada
                         case 0: // Molienda
                             batchStartTime = DateTime.Now; // Usamos la fecha actual para simular el inicio
                             stageStartTimes[stage] = batchStartTime;
-                            cantidadMalta = 200m;
+                            cantidadMalta = 200m; // Cantidad fija por batch
                             decimal molienda = ProcesarMolienda(cantidadMalta);
                             decimal sobranteMalta = almacenMalta - cantidadMalta;
                             almacenMalta = sobranteMalta;
-                            DateTime moliendaEnd = batchStartTime.AddHours(1); // 1 hora
+                            DateTime moliendaEnd = stageStartTimes[stage].AddHours(1); // 1 hora
                             UpdateUI(() =>
                             {
                                 label7.Text = $"{molienda:F2} kg";
@@ -679,7 +688,7 @@ namespace BrewScada
                             break;
                         case 1: // Cocción
                             stageStartTimes[stage] = batchStartTime.AddHours(1); // Después de Molienda
-                            cantidadAgua = 1200m;
+                            cantidadAgua = 1200m; // Cantidad fija por batch
                             decimal coccion = ProcesarCoccion(cantidadAgua);
                             decimal sobranteAgua = almacenAgua - cantidadAgua;
                             almacenAgua = sobranteAgua;
@@ -693,7 +702,7 @@ namespace BrewScada
                             break;
                         case 2: // Fermentación
                             stageStartTimes[stage] = batchStartTime.AddHours(3); // Después de Cocción
-                            cantidadLevadura = 0.75m;
+                            cantidadLevadura = 0.75m; // Cantidad fija por batch
                             decimal fermentacion = ProcesarFermentacion(cantidadLevadura);
                             decimal sobranteLevadura = almacenLevadura - cantidadLevadura;
                             almacenLevadura = sobranteLevadura;
@@ -707,7 +716,7 @@ namespace BrewScada
                             break;
                         case 3: // Embotellado
                             stageStartTimes[stage] = batchStartTime.AddHours(99); // Después de Fermentación
-                            cantidadBotellas = 1000m;
+                            cantidadBotellas = 1000m; // Cantidad fija por batch
                             decimal embotellado = ProcesarEmbotellado(cantidadBotellas);
                             decimal sobranteBotellas = almacenBotellas - cantidadBotellas;
                             almacenBotellas = sobranteBotellas;
@@ -727,7 +736,7 @@ namespace BrewScada
                     stage++; // Avanzar a la siguiente etapa
                 }
 
-                // Actualizar la interfaz con el progreso completo y reiniciar
+                // Actualizar la interfaz con el inventario final después de completar todas las etapas
                 UpdateUI(() =>
                 {
                     label15.Text = $"Malta de cebada: {almacenMalta:F3} kg";
