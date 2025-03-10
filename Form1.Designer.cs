@@ -3,9 +3,9 @@
     partial class Form1
     {
         private System.ComponentModel.IContainer components = null;
-        private Label dateTimeLabel; // Solo declaramos aquí
-        private Label inventoryStatusLabel; // Nuevo label para estado de inventario
-        private Label progressLabel; // Nuevo label para porcentaje de progreso
+        private Label dateTimeLabel;
+        private Label inventoryStatusLabel;
+        private Label progressLabel;
 
         protected override void Dispose(bool disposing)
         {
@@ -80,9 +80,11 @@
             ((System.ComponentModel.ISupportInitialize)pictureBox2).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox5).BeginInit();
             SuspendLayout();
+
             // 
             // panel1
             // 
+            panel1.BackColor = Color.Gray;
             panel1.Controls.Add(panel3);
             panel1.Controls.Add(groupBox1);
             panel1.Controls.Add(panel2);
@@ -92,9 +94,11 @@
             panel1.Name = "panel1";
             panel1.Size = new Size(1898, 1024);
             panel1.TabIndex = 0;
+
             // 
             // panel3
             // 
+            panel3.BackColor = Color.DimGray;
             panel3.Controls.Add(progressBar1);
             panel3.Controls.Add(label18);
             panel3.Controls.Add(label17);
@@ -108,85 +112,112 @@
             panel3.Name = "panel3";
             panel3.Size = new Size(391, 430);
             panel3.TabIndex = 2;
+
             // 
             // progressBar1
             // 
-            progressBar1.Location = new Point(9, 292);
+            progressBar1.ForeColor = Color.FromArgb(0, 180, 0);
+            progressBar1.Location = new Point(9, 310); // Restaurado debajo de progressLabel
             progressBar1.Name = "progressBar1";
-            progressBar1.Size = new Size(233, 49);
+            progressBar1.Size = new Size(373, 35); // Tamaño original
+            progressBar1.Style = ProgressBarStyle.Continuous;
             progressBar1.TabIndex = 4;
+
             // 
             // label18
             // 
             label18.AutoSize = true;
-            label18.Location = new Point(6, 233);
+            label18.Font = new Font("Segoe UI", 10F);
+            label18.ForeColor = Color.White;
+            label18.Location = new Point(10, 233);
             label18.Margin = new Padding(4, 0, 4, 0);
             label18.Name = "label18";
-            label18.Size = new Size(0, 25);
+            label18.Size = new Size(0, 28);
             label18.TabIndex = 4;
+
             // 
             // label17
             // 
             label17.AutoSize = true;
-            label17.Location = new Point(6, 183);
+            label17.Font = new Font("Segoe UI", 10F);
+            label17.ForeColor = Color.White;
+            label17.Location = new Point(10, 183);
             label17.Margin = new Padding(4, 0, 4, 0);
             label17.Name = "label17";
-            label17.Size = new Size(0, 25);
+            label17.Size = new Size(0, 28);
             label17.TabIndex = 3;
+
             // 
             // label16
             // 
             label16.AutoSize = true;
-            label16.Location = new Point(6, 133);
+            label16.Font = new Font("Segoe UI", 10F);
+            label16.ForeColor = Color.White;
+            label16.Location = new Point(10, 133);
             label16.Margin = new Padding(4, 0, 4, 0);
             label16.Name = "label16";
-            label16.Size = new Size(0, 25);
+            label16.Size = new Size(0, 28);
             label16.TabIndex = 2;
+
             // 
             // label15
             // 
             label15.AutoSize = true;
-            label15.Location = new Point(6, 83);
+            label15.Font = new Font("Segoe UI", 10F);
+            label15.ForeColor = Color.White;
+            label15.Location = new Point(10, 83);
             label15.Margin = new Padding(4, 0, 4, 0);
             label15.Name = "label15";
-            label15.Size = new Size(0, 25);
+            label15.Size = new Size(0, 28);
             label15.TabIndex = 1;
+
             // 
             // label14
             // 
             label14.AutoSize = true;
             label14.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
-            label14.Location = new Point(6, 17);
+            label14.ForeColor = Color.FromArgb(0, 191, 255);
+            label14.Location = new Point(10, 20);
             label14.Margin = new Padding(4, 0, 4, 0);
             label14.Name = "label14";
             label14.Size = new Size(345, 32);
             label14.TabIndex = 0;
             label14.Text = "Almacén de materias primas:";
+
             // 
             // inventoryStatusLabel
             // 
             inventoryStatusLabel.AutoSize = true;
-            inventoryStatusLabel.Location = new Point(9, 350);
+            inventoryStatusLabel.Font = new Font("Segoe UI", 10F);
+            inventoryStatusLabel.ForeColor = Color.White;
+            inventoryStatusLabel.Location = new Point(10, 350);
             inventoryStatusLabel.Name = "inventoryStatusLabel";
-            inventoryStatusLabel.Size = new Size(246, 25);
+            inventoryStatusLabel.Size = new Size(271, 28);
             inventoryStatusLabel.TabIndex = 5;
             inventoryStatusLabel.Text = "Estado del inventario: Normal";
+
             // 
             // progressLabel
             // 
             progressLabel.AutoSize = true;
-            progressLabel.Location = new Point(246, 305);
+            progressLabel.Font = new Font("Segoe UI", 10F);
+            progressLabel.ForeColor = Color.White;
+            progressLabel.Location = new Point(10, 280); // Ajustado para estar encima de progressBar1
             progressLabel.Name = "progressLabel";
-            progressLabel.Size = new Size(118, 25);
+            progressLabel.Size = new Size(127, 28);
             progressLabel.TabIndex = 7;
             progressLabel.Text = "Progreso: 0%";
+
             // 
             // groupBox1
             // 
+            groupBox1.BackColor = SystemColors.ControlDarkDark;
             groupBox1.Controls.Add(button3);
             groupBox1.Controls.Add(button2);
             groupBox1.Controls.Add(exportToPDFButton);
             groupBox1.Controls.Add(button1);
+            groupBox1.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            groupBox1.ForeColor = Color.FromArgb(0, 191, 255);
             groupBox1.Location = new Point(15, 20);
             groupBox1.Margin = new Padding(4, 5, 4, 5);
             groupBox1.Name = "groupBox1";
@@ -195,53 +226,75 @@
             groupBox1.TabIndex = 0;
             groupBox1.TabStop = false;
             groupBox1.Text = "Control de Producción";
+
             // 
             // button3
             // 
-            button3.Location = new Point(7, 201);
+            button3.BackColor = Color.FromArgb(120, 120, 120);
+            button3.FlatStyle = FlatStyle.Flat;
+            button3.Font = new Font("Segoe UI", 10F);
+            button3.ForeColor = Color.White;
+            button3.Location = new Point(15, 195);
             button3.Margin = new Padding(4, 5, 4, 5);
             button3.Name = "button3";
-            button3.Size = new Size(143, 38);
+            button3.Size = new Size(150, 40);
             button3.TabIndex = 4;
             button3.Text = "Parar";
-            button3.UseVisualStyleBackColor = true;
+            button3.UseVisualStyleBackColor = false;
             button3.Click += button3_Click;
+
             // 
             // button2
             // 
-            button2.Location = new Point(7, 153);
+            button2.BackColor = Color.FromArgb(120, 120, 120);
+            button2.FlatStyle = FlatStyle.Flat;
+            button2.Font = new Font("Segoe UI", 10F);
+            button2.ForeColor = Color.White;
+            button2.Location = new Point(15, 145);
             button2.Margin = new Padding(4, 5, 4, 5);
             button2.Name = "button2";
-            button2.Size = new Size(143, 38);
+            button2.Size = new Size(150, 40);
             button2.TabIndex = 3;
             button2.Text = "Pausar";
-            button2.UseVisualStyleBackColor = true;
+            button2.UseVisualStyleBackColor = false;
             button2.Click += button2_Click;
+
             // 
             // exportToPDFButton
             // 
-            exportToPDFButton.Location = new Point(8, 105);
+            exportToPDFButton.BackColor = Color.FromArgb(120, 120, 120);
+            exportToPDFButton.FlatStyle = FlatStyle.Flat;
+            exportToPDFButton.Font = new Font("Segoe UI", 10F);
+            exportToPDFButton.ForeColor = Color.White;
+            exportToPDFButton.Location = new Point(15, 95);
             exportToPDFButton.Margin = new Padding(4, 5, 4, 5);
             exportToPDFButton.Name = "exportToPDFButton";
-            exportToPDFButton.Size = new Size(143, 38);
+            exportToPDFButton.Size = new Size(150, 40);
             exportToPDFButton.TabIndex = 2;
             exportToPDFButton.Text = "Exportar a PDF";
-            exportToPDFButton.UseVisualStyleBackColor = true;
+            exportToPDFButton.UseVisualStyleBackColor = false;
             exportToPDFButton.Click += exportToPDFButton_Click;
+
             // 
             // button1
             // 
-            button1.Location = new Point(8, 55);
+            button1.BackColor = Color.FromArgb(120, 120, 120);
+            button1.FlatStyle = FlatStyle.Flat;
+            button1.Font = new Font("Segoe UI", 10F);
+            button1.ForeColor = Color.White;
+            button1.Location = new Point(15, 45);
             button1.Margin = new Padding(4, 5, 4, 5);
             button1.Name = "button1";
-            button1.Size = new Size(143, 38);
+            button1.Size = new Size(150, 40);
             button1.TabIndex = 1;
             button1.Text = "Empezar";
-            button1.UseVisualStyleBackColor = true;
+            button1.UseVisualStyleBackColor = false;
             button1.Click += button1_Click;
+
             // 
             // panel2
             // 
+            panel2.BackColor = Color.DimGray;
             panel2.Controls.Add(pictureBox8);
             panel2.Controls.Add(pictureBox4);
             panel2.Controls.Add(pictureBox7);
@@ -279,6 +332,7 @@
             panel2.Name = "panel2";
             panel2.Size = new Size(1487, 966);
             panel2.TabIndex = 1;
+
             // 
             // pictureBox8
             // 
@@ -289,6 +343,7 @@
             pictureBox8.SizeMode = PictureBoxSizeMode.Zoom;
             pictureBox8.TabIndex = 34;
             pictureBox8.TabStop = false;
+
             // 
             // pictureBox4
             // 
@@ -299,6 +354,7 @@
             pictureBox4.SizeMode = PictureBoxSizeMode.Zoom;
             pictureBox4.TabIndex = 33;
             pictureBox4.TabStop = false;
+
             // 
             // pictureBox7
             // 
@@ -309,6 +365,7 @@
             pictureBox7.SizeMode = PictureBoxSizeMode.Zoom;
             pictureBox7.TabIndex = 32;
             pictureBox7.TabStop = false;
+
             // 
             // pictureBox6
             // 
@@ -319,69 +376,88 @@
             pictureBox6.SizeMode = PictureBoxSizeMode.Zoom;
             pictureBox6.TabIndex = 31;
             pictureBox6.TabStop = false;
+
             // 
             // textBox1
             // 
-            textBox1.BackColor = SystemColors.ActiveCaption;
+            textBox1.BackColor = Color.FromArgb(80, 80, 80);
+            textBox1.BorderStyle = BorderStyle.FixedSingle;
+            textBox1.Font = new Font("Segoe UI", 10F);
+            textBox1.ForeColor = Color.White;
             textBox1.Location = new Point(38, 604);
             textBox1.Multiline = true;
             textBox1.Name = "textBox1";
             textBox1.ReadOnly = true;
             textBox1.Size = new Size(511, 292);
             textBox1.TabIndex = 29;
+
             // 
             // label1
             // 
             label1.AutoSize = true;
-            label1.Font = new Font("Segoe UI", 14F, FontStyle.Bold);
-            label1.Location = new Point(38, 539);
+            label1.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
+            label1.ForeColor = Color.FromArgb(0, 191, 255);
+            label1.Location = new Point(38, 565);
             label1.Margin = new Padding(4, 0, 4, 0);
             label1.Name = "label1";
-            label1.Size = new Size(476, 38);
+            label1.Size = new Size(416, 32);
             label1.TabIndex = 28;
             label1.Text = "Almacén de productos terminados:";
             label1.Click += label1_Click;
+
             // 
             // label27
             // 
             label27.AutoSize = true;
+            label27.Font = new Font("Segoe UI", 10F);
+            label27.ForeColor = Color.White;
             label27.Location = new Point(988, 857);
             label27.Margin = new Padding(4, 0, 4, 0);
             label27.Name = "label27";
-            label27.Size = new Size(59, 25);
+            label27.Size = new Size(64, 28);
             label27.TabIndex = 27;
             label27.Text = "Batch:";
+
             // 
             // label26
             // 
             label26.AutoSize = true;
+            label26.Font = new Font("Segoe UI", 10F);
+            label26.ForeColor = Color.White;
             label26.Location = new Point(980, 446);
             label26.Margin = new Padding(4, 0, 4, 0);
             label26.Name = "label26";
-            label26.Size = new Size(59, 25);
+            label26.Size = new Size(64, 28);
             label26.TabIndex = 26;
             label26.Text = "Batch:";
+
             // 
             // label25
             // 
             label25.AutoSize = true;
+            label25.Font = new Font("Segoe UI", 10F);
+            label25.ForeColor = Color.White;
             label25.Location = new Point(548, 446);
             label25.Margin = new Padding(4, 0, 4, 0);
             label25.Name = "label25";
-            label25.Size = new Size(59, 25);
+            label25.Size = new Size(64, 28);
             label25.TabIndex = 25;
             label25.Text = "Batch:";
+
             // 
             // label24
             // 
             label24.AutoSize = true;
+            label24.Font = new Font("Segoe UI", 10F);
+            label24.ForeColor = Color.White;
             label24.Location = new Point(166, 446);
             label24.Margin = new Padding(4, 0, 4, 0);
             label24.Name = "label24";
-            label24.Size = new Size(59, 25);
+            label24.Size = new Size(64, 28);
             label24.TabIndex = 24;
             label24.Text = "Batch:";
             label24.Click += label24_Click;
+
             // 
             // pictureBox1
             // 
@@ -393,87 +469,112 @@
             pictureBox1.TabIndex = 3;
             pictureBox1.TabStop = false;
             pictureBox1.Click += pictureBox1_Click;
+
             // 
             // label22
             // 
             label22.AutoSize = true;
+            label22.Font = new Font("Segoe UI", 10F);
+            label22.ForeColor = Color.White;
             label22.Location = new Point(988, 819);
             label22.Margin = new Padding(4, 0, 4, 0);
             label22.Name = "label22";
-            label22.Size = new Size(39, 25);
+            label22.Size = new Size(42, 28);
             label22.TabIndex = 23;
             label22.Text = "Fin:";
+
             // 
             // label23
             // 
             label23.AutoSize = true;
+            label23.Font = new Font("Segoe UI", 10F);
+            label23.ForeColor = Color.White;
             label23.Location = new Point(988, 780);
             label23.Margin = new Padding(4, 0, 4, 0);
             label23.Name = "label23";
-            label23.Size = new Size(58, 25);
+            label23.Size = new Size(63, 28);
             label23.TabIndex = 22;
             label23.Text = "Inicio:";
+
             // 
             // label20
             // 
             label20.AutoSize = true;
+            label20.Font = new Font("Segoe UI", 10F);
+            label20.ForeColor = Color.White;
             label20.Location = new Point(980, 416);
             label20.Margin = new Padding(4, 0, 4, 0);
             label20.Name = "label20";
-            label20.Size = new Size(39, 25);
+            label20.Size = new Size(42, 28);
             label20.TabIndex = 21;
             label20.Text = "Fin:";
+
             // 
             // label21
             // 
             label21.AutoSize = true;
+            label21.Font = new Font("Segoe UI", 10F);
+            label21.ForeColor = Color.White;
             label21.Location = new Point(980, 377);
             label21.Margin = new Padding(4, 0, 4, 0);
             label21.Name = "label21";
-            label21.Size = new Size(58, 25);
+            label21.Size = new Size(63, 28);
             label21.TabIndex = 20;
             label21.Text = "Inicio:";
+
             // 
             // label19
             // 
             label19.AutoSize = true;
+            label19.Font = new Font("Segoe UI", 10F);
+            label19.ForeColor = Color.White;
             label19.Location = new Point(548, 412);
             label19.Margin = new Padding(4, 0, 4, 0);
             label19.Name = "label19";
-            label19.Size = new Size(39, 25);
+            label19.Size = new Size(42, 28);
             label19.TabIndex = 19;
             label19.Text = "Fin:";
+
             // 
             // label12
             // 
             label12.AutoSize = true;
+            label12.Font = new Font("Segoe UI", 10F);
+            label12.ForeColor = Color.White;
             label12.Location = new Point(548, 373);
             label12.Margin = new Padding(4, 0, 4, 0);
             label12.Name = "label12";
-            label12.Size = new Size(58, 25);
+            label12.Size = new Size(63, 28);
             label12.TabIndex = 18;
             label12.Text = "Inicio:";
+
             // 
             // label11
             // 
             label11.AutoSize = true;
+            label11.Font = new Font("Segoe UI", 10F);
+            label11.ForeColor = Color.White;
             label11.Location = new Point(166, 412);
             label11.Margin = new Padding(4, 0, 4, 0);
             label11.Name = "label11";
-            label11.Size = new Size(39, 25);
+            label11.Size = new Size(42, 28);
             label11.TabIndex = 17;
             label11.Text = "Fin:";
             label11.Click += label11_Click;
+
             // 
             // label2
             // 
             label2.AutoSize = true;
+            label2.Font = new Font("Segoe UI", 10F);
+            label2.ForeColor = Color.White;
             label2.Location = new Point(166, 374);
             label2.Margin = new Padding(4, 0, 4, 0);
             label2.Name = "label2";
-            label2.Size = new Size(58, 25);
+            label2.Size = new Size(63, 28);
             label2.TabIndex = 16;
             label2.Text = "Inicio:";
+
             // 
             // pictureBox3
             // 
@@ -484,6 +585,7 @@
             pictureBox3.SizeMode = PictureBoxSizeMode.Zoom;
             pictureBox3.TabIndex = 13;
             pictureBox3.TabStop = false;
+
             // 
             // pictureBox2
             // 
@@ -494,6 +596,7 @@
             pictureBox2.SizeMode = PictureBoxSizeMode.Zoom;
             pictureBox2.TabIndex = 12;
             pictureBox2.TabStop = false;
+
             // 
             // pictureBox5
             // 
@@ -505,111 +608,141 @@
             pictureBox5.TabIndex = 7;
             pictureBox5.TabStop = false;
             pictureBox5.Click += pictureBox5_Click;
+
             // 
             // label13
             // 
             label13.AutoSize = true;
-            label13.Font = new Font("Segoe UI", 14F, FontStyle.Bold);
+            label13.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
+            label13.ForeColor = Color.FromArgb(0, 191, 255);
             label13.Location = new Point(38, 35);
             label13.Margin = new Padding(4, 0, 4, 0);
             label13.Name = "label13";
-            label13.Size = new Size(288, 38);
+            label13.Size = new Size(252, 32);
             label13.TabIndex = 11;
             label13.Text = "Detalles del proceso:";
+
             // 
             // dateTimeLabel
             // 
             dateTimeLabel.AutoSize = true;
             dateTimeLabel.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
+            dateTimeLabel.ForeColor = Color.White;
             dateTimeLabel.Location = new Point(1188, 21);
             dateTimeLabel.Name = "dateTimeLabel";
             dateTimeLabel.Size = new Size(287, 32);
             dateTimeLabel.TabIndex = 15;
             dateTimeLabel.Text = "dd/MM/yyyy HH:mm:ss";
             dateTimeLabel.Click += dateTimeLabel_Click;
+
             // 
             // label7
             // 
             label7.AutoSize = true;
+            label7.Font = new Font("Segoe UI", 10F);
+            label7.ForeColor = Color.FromArgb(0, 255, 0);
             label7.Location = new Point(277, 339);
             label7.Margin = new Padding(4, 0, 4, 0);
             label7.Name = "label7";
-            label7.Size = new Size(0, 25);
+            label7.Size = new Size(0, 28);
             label7.TabIndex = 5;
             label7.Click += label7_Click;
+
             // 
             // label3
             // 
             label3.AutoSize = true;
+            label3.Font = new Font("Segoe UI", 10F);
+            label3.ForeColor = Color.White;
             label3.Location = new Point(166, 339);
             label3.Margin = new Padding(4, 0, 4, 0);
             label3.Name = "label3";
-            label3.Size = new Size(90, 25);
+            label3.Size = new Size(99, 28);
             label3.TabIndex = 1;
             label3.Text = "Molienda:";
             label3.Click += label3_Click;
+
             // 
             // label10
             // 
             label10.AutoSize = true;
+            label10.Font = new Font("Segoe UI", 10F);
+            label10.ForeColor = Color.FromArgb(0, 255, 0);
             label10.Location = new Point(1126, 738);
             label10.Margin = new Padding(4, 0, 4, 0);
             label10.Name = "label10";
-            label10.Size = new Size(0, 25);
+            label10.Size = new Size(0, 28);
             label10.TabIndex = 8;
+
             // 
             // label9
             // 
             label9.AutoSize = true;
+            label9.Font = new Font("Segoe UI", 10F);
+            label9.ForeColor = Color.FromArgb(0, 255, 0);
             label9.Location = new Point(1126, 338);
             label9.Margin = new Padding(4, 0, 4, 0);
             label9.Name = "label9";
-            label9.Size = new Size(0, 25);
+            label9.Size = new Size(0, 28);
             label9.TabIndex = 7;
+
             // 
             // label8
             // 
             label8.AutoSize = true;
+            label8.Font = new Font("Segoe UI", 10F);
+            label8.ForeColor = Color.FromArgb(0, 255, 0);
             label8.Location = new Point(655, 340);
             label8.Margin = new Padding(4, 0, 4, 0);
             label8.Name = "label8";
-            label8.Size = new Size(0, 25);
+            label8.Size = new Size(0, 28);
             label8.TabIndex = 6;
+
             // 
             // label6
             // 
             label6.AutoSize = true;
+            label6.Font = new Font("Segoe UI", 10F);
+            label6.ForeColor = Color.White;
             label6.Location = new Point(980, 738);
             label6.Margin = new Padding(4, 0, 4, 0);
             label6.Name = "label6";
-            label6.Size = new Size(117, 25);
+            label6.Size = new Size(128, 28);
             label6.TabIndex = 4;
             label6.Text = "Embotellado:";
+
             // 
             // label5
             // 
             label5.AutoSize = true;
+            label5.Font = new Font("Segoe UI", 10F);
+            label5.ForeColor = Color.White;
             label5.Location = new Point(980, 339);
             label5.Margin = new Padding(4, 0, 4, 0);
             label5.Name = "label5";
-            label5.Size = new Size(123, 25);
+            label5.Size = new Size(135, 28);
             label5.TabIndex = 3;
             label5.Text = "Fermentación:";
+
             // 
             // label4
             // 
             label4.AutoSize = true;
+            label4.Font = new Font("Segoe UI", 10F);
+            label4.ForeColor = Color.White;
             label4.Location = new Point(548, 338);
             label4.Margin = new Padding(4, 0, 4, 0);
             label4.Name = "label4";
-            label4.Size = new Size(79, 25);
+            label4.Size = new Size(86, 28);
             label4.TabIndex = 2;
             label4.Text = "Cocción:";
+
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(10F, 25F);
             AutoScaleMode = AutoScaleMode.Font;
+            BackColor = Color.FromArgb(47, 47, 47);
             ClientSize = new Size(1898, 1024);
             Controls.Add(panel1);
             Icon = (Icon)resources.GetObject("$this.Icon");
