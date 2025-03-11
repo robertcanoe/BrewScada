@@ -21,6 +21,7 @@ namespace BrewScada
         private Random _random;
         private bool isRunning;
         private bool isPaused;
+        private bool isFirstBatch; // Nueva variable para controlar si es el primer batch
         private string batchDetails;
         private decimal cantidadMalta;
         private decimal cantidadAgua;
@@ -28,7 +29,9 @@ namespace BrewScada
         private decimal cantidadBotellas;
         private int stage;
         private DateTime batchStartTime;
+        private DateTime lastBatchEndTime; // Almacena la fecha de fin del último batch
         private DateTime[] stageStartTimes;
+        private DateTime[] stageEndTimes; // Almacena las fechas de fin de cada etapa
         private string currentBatchName;
         private int batchCount;
         private const int TOTAL_BATCHES = 10;
@@ -71,9 +74,13 @@ namespace BrewScada
             InitializeTimers();
             isRunning = false;
             isPaused = false;
+            isFirstBatch = true; // Inicializamos como true para el primer batch
             batchDetails = string.Empty;
             stage = 0;
+            batchStartTime = DateTime.MinValue; // Inicializamos como vacío
+            lastBatchEndTime = DateTime.MinValue; // Inicializamos como vacío
             stageStartTimes = new DateTime[4];
+            stageEndTimes = new DateTime[4]; // Inicializamos el arreglo para las fechas de fin
             batchCount = 0;
             stageUpdates = new int[4]; // Inicializamos el contador de actualizaciones por etapa
             lastBatchNumber = 0; // Inicializamos el último batch número
@@ -127,13 +134,9 @@ namespace BrewScada
             // Precálculo de todas las fechas al inicio del batch
             if (stage == 0 && stageUpdates[stage] == 0)
             {
-                if (batchCount == 0)
-                {
-                    batchStartTime = new DateTime(2025, 3, 10, 12, 0, 0); // Fecha fija inicial
-                }
                 stageStartTimes[0] = batchStartTime;
 
-                // Precalculamos todas las fechas de inicio de cada etapa
+                // Precalculamos todas las fechas de inicio y fin de cada etapa
                 for (int i = 1; i < stageStartTimes.Length; i++)
                 {
                     int horasAcumuladas = 0;
@@ -142,23 +145,32 @@ namespace BrewScada
                         horasAcumuladas += stageDurations[j];
                     }
                     stageStartTimes[i] = batchStartTime.AddHours(horasAcumuladas);
+                    stageEndTimes[i] = stageStartTimes[i].AddHours(stageDurations[i]);
                 }
 
-                currentBatchName = "Batch_" + GetNextBatchNumber().ToString("D4");
                 UpdateUI(() =>
                 {
                     label24.Text = $"Batch: {currentBatchName}";
                     label25.Text = $"Batch: {currentBatchName}";
                     label26.Text = $"Batch: {currentBatchName}";
                     label27.Text = $"Batch: {currentBatchName}";
-                    moliendaStartLabel.Text = "Inicio: --/--/-- --:--:--";
-                    moliendaEndLabel.Text = "Fin: --/--/-- --:--:--";
-                    coccionStartLabel.Text = "Inicio: --/--/-- --:--:--";
-                    coccionEndLabel.Text = "Fin: --/--/-- --:--:--";
-                    fermentacionStartLabel.Text = "Inicio: --/--/-- --:--:--";
-                    fermentacionEndLabel.Text = "Fin: --/--/-- --:--:--";
-                    embotelladoStartLabel.Text = "Inicio: --/--/-- --:--:--";
-                    embotelladoEndLabel.Text = "Fin: --/--/-- --:--:--";
+                    // Solo reiniciamos las etiquetas de las etapas no completadas
+                    if (moliendaStartLabel.Text == "Inicio: --/--/-- --:--:--")
+                        moliendaStartLabel.Text = "Inicio: --/--/-- --:--:--";
+                    if (moliendaEndLabel.Text == "Fin: --/--/-- --:--:--")
+                        moliendaEndLabel.Text = "Fin: --/--/-- --:--:--";
+                    if (coccionStartLabel.Text == "Inicio: --/--/-- --:--:--")
+                        coccionStartLabel.Text = "Inicio: --/--/-- --:--:--";
+                    if (coccionEndLabel.Text == "Fin: --/--/-- --:--:--")
+                        coccionEndLabel.Text = "Fin: --/--/-- --:--:--";
+                    if (fermentacionStartLabel.Text == "Inicio: --/--/-- --:--:--")
+                        fermentacionStartLabel.Text = "Inicio: --/--/-- --:--:--";
+                    if (fermentacionEndLabel.Text == "Fin: --/--/-- --:--:--")
+                        fermentacionEndLabel.Text = "Fin: --/--/-- --:--:--";
+                    if (embotelladoStartLabel.Text == "Inicio: --/--/-- --:--:--")
+                        embotelladoStartLabel.Text = "Inicio: --/--/-- --:--:--";
+                    if (embotelladoEndLabel.Text == "Fin: --/--/-- --:--:--")
+                        embotelladoEndLabel.Text = "Fin: --/--/-- --:--:--";
                     progressBar1.Value = 0;
                     progressLabel.Text = $"Progreso: 0%";
                 });
@@ -185,6 +197,7 @@ namespace BrewScada
                         almacenMalta = sobranteMalta;
                         batchDetails = FormatearDetallesProceso($"Molienda:{molienda:F3} kg de Malta", $"Sobrante Malta: {sobranteMalta:F3} kg");
                         DateTime moliendaEnd = batchStartTime.AddHours(1); // 1 hora = 7.5 segundos
+                        stageEndTimes[0] = moliendaEnd; // Guardamos la fecha de fin
                         UpdateUI(() =>
                         {
                             label7.Text = $"{molienda:F3} kg de Malta";
@@ -231,6 +244,7 @@ namespace BrewScada
                     if (stageUpdates[stage] == 2)
                     {
                         DateTime coccionEnd = stageStartTimes[stage].AddHours(2); // 2 horas = 15 segundos
+                        stageEndTimes[1] = coccionEnd; // Guardamos la fecha de fin
                         UpdateUI(() =>
                         {
                             if (coccionEndLabel != null)
@@ -269,6 +283,7 @@ namespace BrewScada
                     if (stageUpdates[stage] == 96)
                     {
                         DateTime fermentacionEnd = stageStartTimes[stage].AddHours(96); // 96 horas = 720 segundos
+                        stageEndTimes[2] = fermentacionEnd; // Guardamos la fecha de fin
                         UpdateUI(() =>
                         {
                             if (fermentacionEndLabel != null)
@@ -307,6 +322,7 @@ namespace BrewScada
                     if (stageUpdates[stage] == 4)
                     {
                         DateTime embotelladoEnd = stageStartTimes[stage].AddHours(4); // 4 horas = 30 segundos
+                        stageEndTimes[3] = embotelladoEnd; // Guardamos la fecha de fin
                         UpdateUI(() =>
                         {
                             if (embotelladoEndLabel != null)
@@ -329,7 +345,7 @@ namespace BrewScada
         {
             _delayTimer.Enabled = false;
 
-            DateTime lastBatchEndTime = stageStartTimes[3].AddHours(4); // Guardamos la fecha de fin del batch actual
+            lastBatchEndTime = stageEndTimes[3]; // Guardamos la fecha de fin del batch actual
 
             if (isRunning)
             {
@@ -350,7 +366,7 @@ namespace BrewScada
                 stage = 0;
                 Array.Clear(stageUpdates, 0, stageUpdates.Length);
 
-                // Importante: Inicializamos el nuevo batch con la fecha de fin del anterior
+                // Usamos la fecha de fin del batch anterior como inicio del siguiente
                 batchStartTime = lastBatchEndTime;
                 stageStartTimes[0] = batchStartTime;
 
@@ -363,6 +379,7 @@ namespace BrewScada
                         horasAcumuladas += stageDurations[j];
                     }
                     stageStartTimes[i] = batchStartTime.AddHours(horasAcumuladas);
+                    stageEndTimes[i] = stageStartTimes[i].AddHours(stageDurations[i]);
                 }
 
                 UpdateUI(() =>
@@ -375,14 +392,27 @@ namespace BrewScada
                     progressBar1.Value = 0;
                     progressLabel.Text = "Progreso: 0%";
 
-                    moliendaStartLabel.Text = "Inicio: --/--/-- --:--:--";
-                    moliendaEndLabel.Text = "Fin: --/--/-- --:--:--";
-                    coccionStartLabel.Text = "Inicio: --/--/-- --:--:--";
-                    coccionEndLabel.Text = "Fin: --/--/-- --:--:--";
-                    fermentacionStartLabel.Text = "Inicio: --/--/-- --:--:--";
-                    fermentacionEndLabel.Text = "Fin: --/--/-- --:--:--";
-                    embotelladoStartLabel.Text = "Inicio: --/--/-- --:--:--";
-                    embotelladoEndLabel.Text = "Fin: --/--/-- --:--:--";
+                    // No tocamos las etiquetas de las etapas ya completadas
+                    if (stage < 1)
+                    {
+                        moliendaStartLabel.Text = "Inicio: --/--/-- --:--:--";
+                        moliendaEndLabel.Text = "Fin: --/--/-- --:--:--";
+                    }
+                    if (stage < 2)
+                    {
+                        coccionStartLabel.Text = "Inicio: --/--/-- --:--:--";
+                        coccionEndLabel.Text = "Fin: --/--/-- --:--:--";
+                    }
+                    if (stage < 3)
+                    {
+                        fermentacionStartLabel.Text = "Inicio: --/--/-- --:--:--";
+                        fermentacionEndLabel.Text = "Fin: --/--/-- --:--:--";
+                    }
+                    if (stage < 4)
+                    {
+                        embotelladoStartLabel.Text = "Inicio: --/--/-- --:--:--";
+                        embotelladoEndLabel.Text = "Fin: --/--/-- --:--:--";
+                    }
                 });
 
                 Thread.Sleep(1000);
@@ -398,6 +428,9 @@ namespace BrewScada
                     progressLabel.Text = "Progreso: 100% (10,000 botellas completadas)";
                 });
                 batchCount = 0;
+                isFirstBatch = true; // Reiniciamos para que el próximo ciclo comience desde DateTime.Now
+                batchStartTime = DateTime.MinValue; // Reiniciamos batchStartTime para el próximo ciclo
+                lastBatchEndTime = DateTime.MinValue; // Reiniciamos lastBatchEndTime
             }
 
             CheckAndNotifyInventory();
@@ -405,11 +438,6 @@ namespace BrewScada
 
         private void StartNextBatch()
         {
-            if (batchCount == 0)
-            {
-                batchStartTime = new DateTime(2025, 3, 10, 12, 0, 0); // Fecha fija inicial
-            }
-            currentBatchName = "Batch_" + GetNextBatchNumber().ToString("D4");
             UpdateUI(() =>
             {
                 button1.Text = "Empezar";
@@ -427,14 +455,27 @@ namespace BrewScada
                 label25.Text = $"Batch: {currentBatchName}";
                 label26.Text = $"Batch: {currentBatchName}";
                 label27.Text = $"Batch: {currentBatchName}";
-                moliendaStartLabel.Text = "Inicio: --/--/-- --:--:--";
-                moliendaEndLabel.Text = "Fin: --/--/-- --:--:--";
-                coccionStartLabel.Text = "Inicio: --/--/-- --:--:--";
-                coccionEndLabel.Text = "Fin: --/--/-- --:--:--";
-                fermentacionStartLabel.Text = "Inicio: --/--/-- --:--:--";
-                fermentacionEndLabel.Text = "Fin: --/--/-- --:--:--";
-                embotelladoStartLabel.Text = "Inicio: --/--/-- --:--:--";
-                embotelladoEndLabel.Text = "Fin: --/--/-- --:--:--";
+                // No reiniciamos las etiquetas de las etapas ya completadas
+                if (stage < 1)
+                {
+                    moliendaStartLabel.Text = "Inicio: --/--/-- --:--:--";
+                    moliendaEndLabel.Text = "Fin: --/--/-- --:--:--";
+                }
+                if (stage < 2)
+                {
+                    coccionStartLabel.Text = "Inicio: --/--/-- --:--:--";
+                    coccionEndLabel.Text = "Fin: --/--/-- --:--:--";
+                }
+                if (stage < 3)
+                {
+                    fermentacionStartLabel.Text = "Inicio: --/--/-- --:--:--";
+                    fermentacionEndLabel.Text = "Fin: --/--/-- --:--:--";
+                }
+                if (stage < 4)
+                {
+                    embotelladoStartLabel.Text = "Inicio: --/--/-- --:--:--";
+                    embotelladoEndLabel.Text = "Fin: --/--/-- --:--:--";
+                }
             });
 
             var produccion = new Produccion
@@ -530,21 +571,31 @@ namespace BrewScada
             }
 
             isRunning = true;
+
+            // Establecemos la hora inicial solo si es el primer batch
+            if (isFirstBatch)
+            {
+                batchStartTime = DateTime.Now;
+                isFirstBatch = false; // Marcamos que ya no es el primer batch
+            }
+            // Para batches posteriores, batchStartTime ya está establecido como lastBatchEndTime
+
             // Obtenemos el siguiente número de batch desde la base de datos
             int currentBatchCount = GetCurrentBatchCount();
             int nextBatchNumber = currentBatchCount + 1;
-            // Actualizamos el contador en la base de datos solo si es un nuevo inicio o tras "Parar"
             UpdateBatchCounter(nextBatchNumber);
             currentBatchName = "Batch_" + nextBatchNumber.ToString("D4");
+
             var produccion = new Produccion
             {
                 BatchName = currentBatchName,
                 Status = "Started",
-                StartDate = DateTime.Now,
-                EndDate = DateTime.Now.AddHours(103) // Aproximado para 103 horas totales
+                StartDate = batchStartTime,
+                EndDate = batchStartTime.AddHours(103) // Aproximado para 103 horas totales
             };
 
             _produccionCollection.InsertOne(produccion);
+            StartNextBatch();
             UpdateUI(() =>
             {
                 batchDetails = $"Batch {currentBatchName} Details:\n";
@@ -557,22 +608,12 @@ namespace BrewScada
                 label9.Location = new Point(1100, 339);
                 label10.Text = "0 botellas";
                 label10.Location = new Point(1100, 738);
-                // Reiniciamos las etiquetas para el nuevo batch
-                moliendaStartLabel.Text = "Inicio: --/--/-- --:--:--";
-                moliendaEndLabel.Text = "Fin: --/--/-- --:--:--";
-                coccionStartLabel.Text = "Inicio: --/--/-- --:--:--";
-                coccionEndLabel.Text = "Fin: --/--/-- --:--:--";
-                fermentacionStartLabel.Text = "Inicio: --/--/-- --:--:--";
-                fermentacionEndLabel.Text = "Fin: --/--/-- --:--:--";
-                embotelladoStartLabel.Text = "Inicio: --/--/-- --:--:--";
-                embotelladoEndLabel.Text = "Fin: --/--/-- --:--:--";
-                // Eliminamos textBox1.Text = ""; para preservar el historial
                 label24.Text = $"Batch: {currentBatchName}";
                 label25.Text = $"Batch: {currentBatchName}";
                 label26.Text = $"Batch: {currentBatchName}";
                 label27.Text = $"Batch: {currentBatchName}";
-                progressBar1.Value = 0; // Aseguramos que la barra comience en 0
-                progressLabel.Text = $"Progreso: 0%"; // Aseguramos que el texto comience en 0%
+                progressBar1.Value = 0;
+                progressLabel.Text = $"Progreso: 0%";
             });
             _processTimer.Enabled = true;
             stage = 0;
@@ -672,13 +713,13 @@ namespace BrewScada
                     switch (stage)
                     {
                         case 0: // Molienda
-                            batchStartTime = DateTime.Now; // Usamos la fecha actual para simular el inicio
                             stageStartTimes[stage] = batchStartTime;
                             cantidadMalta = 200m; // Cantidad fija por batch
                             decimal molienda = ProcesarMolienda(cantidadMalta);
                             decimal sobranteMalta = almacenMalta - cantidadMalta;
                             almacenMalta = sobranteMalta;
                             DateTime moliendaEnd = stageStartTimes[stage].AddHours(1); // 1 hora
+                            stageEndTimes[0] = moliendaEnd; // Guardamos la fecha de fin
                             UpdateUI(() =>
                             {
                                 label7.Text = $"{molienda:F2} kg";
@@ -693,6 +734,7 @@ namespace BrewScada
                             decimal sobranteAgua = almacenAgua - cantidadAgua;
                             almacenAgua = sobranteAgua;
                             DateTime coccionEnd = stageStartTimes[stage].AddHours(2); // 2 horas
+                            stageEndTimes[1] = coccionEnd; // Guardamos la fecha de fin
                             UpdateUI(() =>
                             {
                                 label8.Text = $"{coccion:F2} L";
@@ -707,6 +749,7 @@ namespace BrewScada
                             decimal sobranteLevadura = almacenLevadura - cantidadLevadura;
                             almacenLevadura = sobranteLevadura;
                             DateTime fermentacionEnd = stageStartTimes[stage].AddHours(96); // 96 horas
+                            stageEndTimes[2] = fermentacionEnd; // Guardamos la fecha de fin
                             UpdateUI(() =>
                             {
                                 label9.Text = $"{fermentacion:F2} kg";
@@ -721,20 +764,24 @@ namespace BrewScada
                             decimal sobranteBotellas = almacenBotellas - cantidadBotellas;
                             almacenBotellas = sobranteBotellas;
                             DateTime embotelladoEnd = stageStartTimes[stage].AddHours(4); // 4 horas
+                            stageEndTimes[3] = embotelladoEnd; // Guardamos la fecha de fin
                             UpdateUI(() =>
                             {
                                 label10.Text = $"{Math.Round(embotellado):F0} botellas";
                                 embotelladoStartLabel.Text = $"Inicio: {stageStartTimes[stage].ToString("dd/MM/yyyy HH:mm:ss")}";
                                 embotelladoEndLabel.Text = $"Fin: {embotelladoEnd.ToString("dd/MM/yyyy HH:mm:ss")}";
                                 if (textBox1 != null)
-                                    textBox1.Text += $"{currentBatchName}: {Math.Round(embotellado):F0} botellas\r\n"; // Usamos += para acumular
+                                    textBox1.Text += $"{currentBatchName}: {Math.Round(embotellado):F0} botellas\r\n";
                             });
-                            // Guardar el batch aquí para evitar duplicación en OnDelayTimerTick
-                            GuardarBotellasLlenas(currentBatchName, Math.Round(embotellado), DateTime.Now);
+                            GuardarBotellasLlenas(currentBatchName, Math.Round(embotellado), embotelladoEnd);
                             break;
                     }
                     stage++; // Avanzar a la siguiente etapa
                 }
+
+                // Guardamos la fecha de fin del batch para usarla en el siguiente
+                lastBatchEndTime = stageEndTimes[3]; // Usamos la fecha de fin del embotellado almacenada
+                batchStartTime = lastBatchEndTime; // Preparamos el siguiente batch
 
                 // Actualizar la interfaz con el inventario final después de completar todas las etapas
                 UpdateUI(() =>
@@ -744,21 +791,26 @@ namespace BrewScada
                     label17.Text = $"Levadura: {almacenLevadura:F3} kg";
                     label18.Text = $"Botellas: {almacenBotellas:F0}";
                     progressBar1.Value = 100;
-                    progressLabel.Text = $"Progreso: 100%"; // Aseguramos que el texto sea 100% al completar
+                    progressLabel.Text = $"Progreso: 100%";
                 });
 
                 // Detener el proceso completamente sin activar el delay timer
                 isRunning = false;
                 isPaused = false;
                 _processTimer.Enabled = false;
-                _delayTimer.Enabled = false; // Aseguramos que no se dispare el delay timer
+                _delayTimer.Enabled = false;
                 UpdateUI(() =>
                 {
-                    button1.Text = "Empezar"; // Cambiamos el botón a "Empezar"
+                    button1.Text = "Empezar";
                 });
 
+                // Reiniciamos las variables para el próximo batch
+                stage = 0;
+                Array.Clear(stageUpdates, 0, stageUpdates.Length);
+                // No reiniciamos stageStartTimes ni stageEndTimes para preservar las fechas
+
                 // Guardar el fin del lote en la base de datos
-                UpdateBatchEndTime(DateTime.Now);
+                UpdateBatchEndTime(lastBatchEndTime);
 
                 // Mostrar mensaje de finalización
                 MessageBox.Show($"El batch {currentBatchName} se ha completado exitosamente.", "Proceso Finalizado", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -812,8 +864,8 @@ namespace BrewScada
                 label16.Text = $"Agua: {almacenAgua:F3} L";
                 label17.Text = $"Levadura: {almacenLevadura:F3} kg";
                 label18.Text = $"Botellas: {almacenBotellas:F0}";
-                progressBar1.Value = 0; // Aseguramos que la barra comience en 0 al cargar
-                progressLabel.Text = $"Progreso: 0%"; // Aseguramos que el texto comience en 0%
+                progressBar1.Value = 0;
+                progressLabel.Text = $"Progreso: 0%";
             });
             InitializeInventory();
         }
