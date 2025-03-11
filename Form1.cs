@@ -362,6 +362,22 @@ namespace BrewScada
             batchCount++;
             if (batchCount < TOTAL_BATCHES)
             {
+                // Generamos un nuevo nombre de batch y lo registramos en la base de datos
+                int currentBatchCount = GetCurrentBatchCount();
+                int nextBatchNumber = currentBatchCount + 1;
+                UpdateBatchCounter(nextBatchNumber);
+                currentBatchName = "Batch_" + nextBatchNumber.ToString("D4");
+
+                // Registramos el nuevo batch en la base de datos
+                var produccion = new Produccion
+                {
+                    BatchName = currentBatchName,
+                    Status = "Started",
+                    StartDate = lastBatchEndTime,
+                    EndDate = lastBatchEndTime.AddHours(103) // Aproximado para 103 horas totales
+                };
+                _produccionCollection.InsertOne(produccion);
+
                 // Reiniciamos para el próximo batch usando la fecha de fin del anterior
                 stage = 0;
                 Array.Clear(stageUpdates, 0, stageUpdates.Length);
@@ -413,6 +429,12 @@ namespace BrewScada
                         embotelladoStartLabel.Text = "Inicio: --/--/-- --:--:--";
                         embotelladoEndLabel.Text = "Fin: --/--/-- --:--:--";
                     }
+
+                    // Actualizamos las etiquetas que muestran el nombre del batch
+                    label24.Text = $"Batch: {currentBatchName}";
+                    label25.Text = $"Batch: {currentBatchName}";
+                    label26.Text = $"Batch: {currentBatchName}";
+                    label27.Text = $"Batch: {currentBatchName}";
                 });
 
                 Thread.Sleep(1000);
