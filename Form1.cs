@@ -18,6 +18,7 @@ namespace BrewScada
         private IMongoCollection<BsonDocument> _batchesBotellasCollection;
         private System.Windows.Forms.Timer _processTimer; // Timer para las etapas principales (7.5 segundos por hora)
         private System.Windows.Forms.Timer _delayTimer;   // Timer para los 10 segundos de retraso en embotellado
+        private System.Windows.Forms.Timer _progressTimer; // Timer para actualizar el progreso de forma suave
         private Random _random;
         private bool isRunning;
         private bool isPaused;
@@ -27,25 +28,30 @@ namespace BrewScada
         private decimal cantidadAgua;
         private decimal cantidadLevadura;
         private decimal cantidadBotellas;
+        private decimal cantidadLupulo; // Nueva variable para el Lúpulo
         private int stage;
         private DateTime batchStartTime;
         private DateTime lastBatchEndTime; // Almacena la fecha de fin del último batch
         private DateTime[] stageStartTimes;
         private DateTime[] stageEndTimes; // Almacena las fechas de fin de cada etapa
+        private DateTime fermentationStartTime; // Momento de inicio de la Fermentación
         private string currentBatchName;
         private int batchCount;
         private const int TOTAL_BATCHES = 10;
+        private const double MERMA_FACTOR = 0.9; // Factor de merma: 10% de pérdida
 
         // Tiempos en horas para cada etapa
         private readonly int[] stageDurations = new int[] { 1, 2, 96, 4 }; // Molienda: 1h, Cocción: 2h, Fermentación: 96h, Embotellado: 4h
         private int[] stageUpdates; // Contador de actualizaciones por etapa
         private const int TOTAL_UPDATES = 103; // 1 + 2 + 96 + 4
         private int lastBatchNumber; // Para rastrear el último batch procesado
+        private double fermentationProgress; // Progreso continuo de Fermentación en horas simuladas
 
         private decimal almacenMalta = 2000m;
         private decimal almacenAgua = 12000m;
         private decimal almacenLevadura = 7.5m;
         private decimal almacenBotellas = 10000m;
+        private decimal almacenLupulo = 30m; // Nueva variable para el inventario de Lúpulo
 
         private InventoryManager _inventoryManager;
         private ProductionLog _productionLog;
@@ -79,6 +85,8 @@ namespace BrewScada
             stage = 0;
             batchStartTime = DateTime.MinValue; // Inicializamos como vacío
             lastBatchEndTime = DateTime.MinValue; // Inicializamos como vacío
+            fermentationStartTime = DateTime.MinValue; // Inicializamos
+            fermentationProgress = 0; // Inicializamos el progreso de Fermentación
             stageStartTimes = new DateTime[4];
             stageEndTimes = new DateTime[4]; // Inicializamos el arreglo para las fechas de fin
             batchCount = 0;
@@ -125,6 +133,12 @@ namespace BrewScada
             _delayTimer.Interval = 10000; // 10 segundos de retraso
             _delayTimer.Tick += OnDelayTimerTick;
             _delayTimer.Enabled = false;
+
+            // Timer para actualizar el progreso de forma suave (cada 50 ms para mayor precisión)
+            _progressTimer = new System.Windows.Forms.Timer();
+            _progressTimer.Interval = 50; // Actualiza cada 50 ms
+            _progressTimer.Tick += OnProgressTimerTick;
+            _progressTimer.Enabled = false;
         }
 
         private void OnTimedEvent(object sender, EventArgs e)
@@ -173,15 +187,22 @@ namespace BrewScada
                         embotelladoEndLabel.Text = "Fin: --/--/-- --:--:--";
                     progressBar1.Value = 0;
                     progressLabel.Text = $"Progreso: 0%";
+                    label33.Text = "0.000 kg de Lúpulo"; // Reiniciamos la etiqueta de Lúpulo consumido con formato F3
                 });
                 Array.Clear(stageUpdates, 0, stageUpdates.Length); // Reiniciamos contadores de actualizaciones
+                fermentationProgress = 0; // Reiniciamos el progreso de Fermentación
+                _progressTimer.Enabled = true; // Activamos el timer de progreso
             }
 
             // Avanzamos según el número de actualizaciones por etapa
-            if (stageUpdates[stage] < stageDurations[stage])
+            int updatesNeeded = stage == 2 ? 2 : stageDurations[stage]; // Fermentación solo necesita 2 actualizaciones
+            if (stageUpdates[stage] < updatesNeeded)
             {
                 stageUpdates[stage]++;
-                UpdateProgress();
+                if (stage == 2 && stageUpdates[stage] == 1)
+                {
+                    fermentationStartTime = DateTime.Now; // Registramos el inicio de Fermentación
+                }
             }
 
             // Calculamos los tiempos y actualizamos las etiquetas solo al completar cada etapa
@@ -195,7 +216,7 @@ namespace BrewScada
                         decimal molienda = ProcesarMolienda(cantidadMalta);
                         decimal sobranteMalta = almacenMalta - cantidadMalta;
                         almacenMalta = sobranteMalta;
-                        batchDetails = FormatearDetallesProceso($"Molienda:{molienda:F3} kg de Malta", $"Sobrante Malta: {sobranteMalta:F3} kg");
+                        batchDetails = FormatearDetallesProceso($"Molienda: {cantidadMalta:F3} kg de Malta consumidos, {molienda:F3} kg procesados (merma 10%)", $"Sobrante Malta: {sobranteMalta:F3} kg");
                         DateTime moliendaEnd = batchStartTime.AddHours(1); // 1 hora = 7.5 segundos
                         stageEndTimes[0] = moliendaEnd; // Guardamos la fecha de fin
                         UpdateUI(() =>
@@ -225,15 +246,20 @@ namespace BrewScada
                     {
                         stageStartTimes[stage] = batchStartTime.AddHours(1); // Continuamos desde el fin de Molienda
                         cantidadAgua = 1200m;
+                        cantidadLupulo = 3m; // Consumimos 3 kg de Lúpulo por batch
                         decimal coccion = ProcesarCoccion(cantidadAgua);
                         decimal sobranteAgua = almacenAgua - cantidadAgua;
+                        decimal sobranteLupulo = almacenLupulo - cantidadLupulo;
                         almacenAgua = sobranteAgua;
-                        batchDetails = FormatearDetallesProceso(batchDetails, $"Cocción: {coccion:F3} L de Agua", $"Sobrante Agua: {sobranteAgua:F3} L");
+                        almacenLupulo = sobranteLupulo;
+                        batchDetails = FormatearDetallesProceso(batchDetails, $"Cocción: {cantidadAgua:F3} L de Agua consumidos, {coccion:F3} L procesados (merma 10%)", $"Sobrante Agua: {sobranteAgua:F3} L", $"Lúpulo consumido: {cantidadLupulo:F3} kg (merma 10%)", $"Sobrante Lúpulo: {sobranteLupulo:F3} kg");
                         UpdateUI(() =>
                         {
-                            label8.Text = $"{cantidadAgua:F3} L de Agua";
+                            label8.Text = $"{coccion:F3} L de Agua";
                             label8.Location = new Point(630, 339);
                             label16.Text = $"Agua: {almacenAgua:F3} L";
+                            label33.Text = $"{cantidadLupulo * (decimal)MERMA_FACTOR:F3} kg de Lúpulo"; // Mostramos Lúpulo consumido con merma
+                            label32.Text = $"Lúpulo: {almacenLupulo:F3} kg"; // Actualizamos inventario de Lúpulo
                             if (coccionStartLabel != null)
                             {
                                 coccionStartLabel.Text = $"Inicio: {stageStartTimes[stage].ToString("dd/MM/yyyy HH:mm:ss")}";
@@ -259,7 +285,7 @@ namespace BrewScada
                     }
                     break;
 
-                case 2: // Fermentación (96 horas = 96 actualizaciones)
+                case 2: // Fermentación (96 horas = 2 actualizaciones, progreso continuo)
                     if (stageUpdates[stage] == 1)
                     {
                         stageStartTimes[stage] = batchStartTime.AddHours(3); // Continuamos desde el fin de Cocción
@@ -267,10 +293,10 @@ namespace BrewScada
                         decimal fermentacion = ProcesarFermentacion(cantidadLevadura);
                         decimal sobranteLevadura = almacenLevadura - cantidadLevadura;
                         almacenLevadura = sobranteLevadura;
-                        batchDetails = FormatearDetallesProceso(batchDetails, $"Fermentación: {fermentacion:F3} kg de Levadura", $"Sobrante Levadura: {sobranteLevadura:F3} kg");
+                        batchDetails = FormatearDetallesProceso(batchDetails, $"Fermentación: {cantidadLevadura:F3} kg de Levadura consumidos, {fermentacion:F3} kg procesados (merma 10%)", $"Sobrante Levadura: {sobranteLevadura:F3} kg");
                         UpdateUI(() =>
                         {
-                            label9.Text = $"{cantidadLevadura:F3} kg de Levadura";
+                            label9.Text = $"{fermentacion:F3} kg de Levadura";
                             label9.Location = new Point(1100, 339);
                             label17.Text = $"Levadura: {almacenLevadura:F3} kg";
                             if (fermentacionStartLabel != null)
@@ -280,9 +306,9 @@ namespace BrewScada
                             }
                         });
                     }
-                    if (stageUpdates[stage] == 96)
+                    if (stageUpdates[stage] == 2)
                     {
-                        DateTime fermentacionEnd = stageStartTimes[stage].AddHours(96); // 96 horas = 720 segundos
+                        DateTime fermentacionEnd = stageStartTimes[stage].AddHours(96); // 96 horas totales simuladas
                         stageEndTimes[2] = fermentacionEnd; // Guardamos la fecha de fin
                         UpdateUI(() =>
                         {
@@ -304,13 +330,13 @@ namespace BrewScada
                         stageStartTimes[stage] = batchStartTime.AddHours(99); // Continuamos desde el fin de Fermentación
                         cantidadBotellas = 1000m;
                         decimal embotellado = ProcesarEmbotellado(cantidadBotellas);
-                        decimal sobranteBotellas = almacenBotellas - cantidadBotellas;
+                        decimal sobranteBotellas = almacenBotellas - embotellado; // Restamos las botellas realmente utilizadas (con merma)
                         almacenBotellas = sobranteBotellas;
-                        batchDetails = FormatearDetallesProceso(batchDetails, $"Embotellado: {Math.Round(embotellado):F0} botellas", $"Sobrante Botellas: {sobranteBotellas:F0} botellas");
+                        batchDetails = FormatearDetallesProceso(batchDetails, $"Embotellado: {cantidadBotellas:F0} botellas previstas, {Math.Round(embotellado):F0} botellas procesadas (merma 10%)", $"Sobrante Botellas: {sobranteBotellas:F0} botellas");
                         UpdateUI(() =>
                         {
-                            label10.Text = $"{Math.Round(cantidadBotellas):F0} botellas";
-                            label10.Location = new Point(1100, 738);
+                            label10.Text = $"{Math.Round(embotellado):F0} botellas";
+                            label10.Location = new Point(1100, 758);
                             label18.Text = $"Botellas: {almacenBotellas:F0}";
                             if (embotelladoStartLabel != null)
                             {
@@ -336,9 +362,15 @@ namespace BrewScada
                         // Iniciamos el timer de retraso de 10 segundos
                         _delayTimer.Enabled = true;
                         _processTimer.Enabled = false; // Pausamos el timer principal
+                        _progressTimer.Enabled = false; // Desactivamos el timer de progreso
                     }
                     break;
             }
+        }
+
+        private void OnProgressTimerTick(object sender, EventArgs e)
+        {
+            UpdateProgress();
         }
 
         private void OnDelayTimerTick(object sender, EventArgs e)
@@ -349,14 +381,14 @@ namespace BrewScada
 
             if (isRunning)
             {
-                GuardarBotellasLlenas(currentBatchName, Math.Round(cantidadBotellas), lastBatchEndTime);
+                GuardarBotellasLlenas(currentBatchName, Math.Round(cantidadBotellas * (decimal)MERMA_FACTOR), lastBatchEndTime);
                 lastBatchNumber = int.Parse(currentBatchName.Replace("Batch_", ""));
             }
 
             UpdateUI(() =>
             {
                 if (textBox1 != null)
-                    textBox1.Text += $"{currentBatchName}: {Math.Round(cantidadBotellas):F0} botellas\r\n";
+                    textBox1.Text += $"{currentBatchName}: {Math.Round(cantidadBotellas * (decimal)MERMA_FACTOR):F0} botellas ➞ 1L\r\n";
             });
 
             batchCount++;
@@ -401,10 +433,11 @@ namespace BrewScada
                 UpdateUI(() =>
                 {
                     // Reinicio de etiquetas y valores visuales
-                    label7.Text = "0 kg de Malta";
-                    label8.Text = "0 L de Agua";
-                    label9.Text = "0 kg de Levadura";
+                    label7.Text = "0.000 kg de Malta";
+                    label8.Text = "0.000 L de Agua";
+                    label9.Text = "0.000 kg de Levadura";
                     label10.Text = "0 botellas";
+                    label33.Text = "0.000 kg de Lúpulo"; // Reiniciamos la etiqueta de Lúpulo consumido
                     progressBar1.Value = 0;
                     progressLabel.Text = "Progreso: 0%";
 
@@ -435,10 +468,12 @@ namespace BrewScada
                     label25.Text = $"Batch: {currentBatchName}";
                     label26.Text = $"Batch: {currentBatchName}";
                     label27.Text = $"Batch: {currentBatchName}";
+                    label32.Text = $"Lúpulo: {almacenLupulo:F3} kg"; // Actualizamos inventario de Lúpulo
                 });
 
                 Thread.Sleep(1000);
                 _processTimer.Enabled = true;
+                _progressTimer.Enabled = true; // Reactivamos el timer de progreso
             }
             else
             {
@@ -453,6 +488,9 @@ namespace BrewScada
                 isFirstBatch = true; // Reiniciamos para que el próximo ciclo comience desde DateTime.Now
                 batchStartTime = DateTime.MinValue; // Reiniciamos batchStartTime para el próximo ciclo
                 lastBatchEndTime = DateTime.MinValue; // Reiniciamos lastBatchEndTime
+                fermentationStartTime = DateTime.MinValue; // Reiniciamos
+                fermentationProgress = 0; // Reiniciamos
+                _progressTimer.Enabled = false; // Desactivamos el timer de progreso
             }
 
             CheckAndNotifyInventory();
@@ -463,20 +501,22 @@ namespace BrewScada
             UpdateUI(() =>
             {
                 button1.Text = "Empezar";
-                label7.Text = "0 kg de Malta";
+                label7.Text = "0.000 kg de Malta";
                 label7.Location = new Point(250, 339);
-                label8.Text = "0 L de Agua";
+                label8.Text = "0.000 L de Agua";
                 label8.Location = new Point(630, 339);
-                label9.Text = "0 kg de Levadura";
+                label9.Text = "0.000 kg de Levadura";
                 label9.Location = new Point(1100, 339);
                 label10.Text = "0 botellas";
-                label10.Location = new Point(1100, 738);
+                label10.Location = new Point(1100, 758);
+                label33.Text = "0.000 kg de Lúpulo"; // Reiniciamos la etiqueta de Lúpulo consumido
                 progressBar1.Value = 0; // Reiniciamos la barra al 0% al iniciar un nuevo batch
                 progressLabel.Text = $"Progreso: 0%";
                 label24.Text = $"Batch: {currentBatchName}";
                 label25.Text = $"Batch: {currentBatchName}";
                 label26.Text = $"Batch: {currentBatchName}";
                 label27.Text = $"Batch: {currentBatchName}";
+                label32.Text = $"Lúpulo: {almacenLupulo:F3} kg";
                 // No reiniciamos las etiquetas de las etapas ya completadas
                 if (stage < 1)
                 {
@@ -515,11 +555,13 @@ namespace BrewScada
                 button1.Text = "En ejecución";
             });
             _processTimer.Enabled = true;
+            _progressTimer.Enabled = true; // Activamos el timer de progreso
             isRunning = true;
             stage = 0;
             CheckAndNotifyInventory();
             Array.Clear(stageStartTimes, 0, stageStartTimes.Length);
             Array.Clear(stageUpdates, 0, stageUpdates.Length); // Reiniciamos contadores
+            fermentationProgress = 0; // Reiniciamos el progreso de Fermentación
             lastBatchNumber = int.Parse(currentBatchName.Replace("Batch_", "")); // Actualizamos el último batch
         }
 
@@ -542,7 +584,22 @@ namespace BrewScada
             {
                 totalUpdatesSoFar += stageDurations[i];
             }
-            totalUpdatesSoFar += stageUpdates[stage];
+
+            // Para Fermentación (stage == 2), calculamos un progreso continuo
+            if (stage == 2 && fermentationStartTime != DateTime.MinValue)
+            {
+                double elapsedSeconds = (DateTime.Now - fermentationStartTime).TotalSeconds;
+                double totalFermentationDuration = 15.0; // 2 × 7.5 segundos
+                double progressFraction = Math.Min(elapsedSeconds / totalFermentationDuration, 1.0); // Proporción del tiempo transcurrido
+                fermentationProgress = progressFraction * 96.0; // Progreso en horas simuladas (0 a 96)
+
+                totalUpdatesSoFar += (int)fermentationProgress;
+            }
+            else
+            {
+                totalUpdatesSoFar += stageUpdates[stage];
+            }
+
             int progressPercentage = (int)((totalUpdatesSoFar * 100) / TOTAL_UPDATES);
             UpdateUI(() =>
             {
@@ -553,22 +610,22 @@ namespace BrewScada
 
         private decimal ProcesarMolienda(decimal cantidadMalta)
         {
-            return cantidadMalta;
+            return cantidadMalta * (decimal)MERMA_FACTOR; // Aplicamos merma del 10%
         }
 
         private decimal ProcesarCoccion(decimal cantidadAgua)
         {
-            return cantidadAgua;
+            return cantidadAgua * (decimal)MERMA_FACTOR; // Aplicamos merma del 10%
         }
 
         private decimal ProcesarFermentacion(decimal cantidadLevadura)
         {
-            return cantidadLevadura;
+            return cantidadLevadura * (decimal)MERMA_FACTOR; // Aplicamos merma del 10%
         }
 
         private decimal ProcesarEmbotellado(decimal cantidadBotellas)
         {
-            return cantidadBotellas;
+            return cantidadBotellas * (decimal)MERMA_FACTOR; // Aplicamos merma del 10%
         }
 
         private Tuple<decimal, decimal, decimal, decimal, decimal> CalcularTiemposDeProceso()
@@ -588,7 +645,7 @@ namespace BrewScada
         {
             if (isRunning)
             {
-                MessageBox.Show("A batch is already running.");
+                MessageBox.Show("Un lote está ya en ejecución.");
                 return;
             }
 
@@ -622,14 +679,15 @@ namespace BrewScada
             {
                 batchDetails = $"Batch {currentBatchName} Details:\n";
                 button1.Text = "En ejecución";
-                label7.Text = "0 kg de Malta";
+                label7.Text = "0.000 kg de Malta";
                 label7.Location = new Point(250, 339);
-                label8.Text = "0 L de Agua";
+                label8.Text = "0.000 L de Agua";
                 label8.Location = new Point(630, 339);
-                label9.Text = "0 kg de Levadura";
+                label9.Text = "0.000 kg de Levadura";
                 label9.Location = new Point(1100, 339);
                 label10.Text = "0 botellas";
-                label10.Location = new Point(1100, 738);
+                label10.Location = new Point(1100, 758);
+                label33.Text = "0.000 kg de Lúpulo"; // Reiniciamos la etiqueta de Lúpulo consumido
                 label24.Text = $"Batch: {currentBatchName}";
                 label25.Text = $"Batch: {currentBatchName}";
                 label26.Text = $"Batch: {currentBatchName}";
@@ -716,12 +774,14 @@ namespace BrewScada
                 isPaused = false;
                 button2.Text = "Pausar";
                 _processTimer.Enabled = true;
+                _progressTimer.Enabled = true;
             }
             else
             {
                 isPaused = true;
                 button2.Text = "Continuar";
                 _processTimer.Enabled = false;
+                _progressTimer.Enabled = false;
             }
         }
 
@@ -744,7 +804,7 @@ namespace BrewScada
                             stageEndTimes[0] = moliendaEnd; // Guardamos la fecha de fin
                             UpdateUI(() =>
                             {
-                                label7.Text = $"{molienda:F2} kg";
+                                label7.Text = $"{molienda:F3} kg de Malta";
                                 moliendaStartLabel.Text = $"Inicio: {stageStartTimes[stage].ToString("dd/MM/yyyy HH:mm:ss")}";
                                 moliendaEndLabel.Text = $"Fin: {moliendaEnd.ToString("dd/MM/yyyy HH:mm:ss")}";
                             });
@@ -752,14 +812,19 @@ namespace BrewScada
                         case 1: // Cocción
                             stageStartTimes[stage] = batchStartTime.AddHours(1); // Después de Molienda
                             cantidadAgua = 1200m; // Cantidad fija por batch
+                            cantidadLupulo = 3m; // Consumimos 3 kg de Lúpulo por batch
                             decimal coccion = ProcesarCoccion(cantidadAgua);
                             decimal sobranteAgua = almacenAgua - cantidadAgua;
+                            decimal sobranteLupulo = almacenLupulo - cantidadLupulo;
                             almacenAgua = sobranteAgua;
+                            almacenLupulo = sobranteLupulo;
                             DateTime coccionEnd = stageStartTimes[stage].AddHours(2); // 2 horas
                             stageEndTimes[1] = coccionEnd; // Guardamos la fecha de fin
                             UpdateUI(() =>
                             {
-                                label8.Text = $"{coccion:F2} L";
+                                label8.Text = $"{coccion:F3} L de Agua";
+                                label33.Text = $"{cantidadLupulo * (decimal)MERMA_FACTOR:F3} kg de Lúpulo"; // Mostramos Lúpulo consumido con merma
+                                label32.Text = $"Lúpulo: {almacenLupulo:F3} kg"; // Actualizamos inventario de Lúpulo
                                 coccionStartLabel.Text = $"Inicio: {stageStartTimes[stage].ToString("dd/MM/yyyy HH:mm:ss")}";
                                 coccionEndLabel.Text = $"Fin: {coccionEnd.ToString("dd/MM/yyyy HH:mm:ss")}";
                             });
@@ -774,7 +839,7 @@ namespace BrewScada
                             stageEndTimes[2] = fermentacionEnd; // Guardamos la fecha de fin
                             UpdateUI(() =>
                             {
-                                label9.Text = $"{fermentacion:F2} kg";
+                                label9.Text = $"{fermentacion:F3} kg de Levadura";
                                 fermentacionStartLabel.Text = $"Inicio: {stageStartTimes[stage].ToString("dd/MM/yyyy HH:mm:ss")}";
                                 fermentacionEndLabel.Text = $"Fin: {fermentacionEnd.ToString("dd/MM/yyyy HH:mm:ss")}";
                             });
@@ -783,7 +848,7 @@ namespace BrewScada
                             stageStartTimes[stage] = batchStartTime.AddHours(99); // Después de Fermentación
                             cantidadBotellas = 1000m; // Cantidad fija por batch
                             decimal embotellado = ProcesarEmbotellado(cantidadBotellas);
-                            decimal sobranteBotellas = almacenBotellas - cantidadBotellas;
+                            decimal sobranteBotellas = almacenBotellas - embotellado; // Restamos las botellas realmente utilizadas (con merma)
                             almacenBotellas = sobranteBotellas;
                             DateTime embotelladoEnd = stageStartTimes[stage].AddHours(4); // 4 horas
                             stageEndTimes[3] = embotelladoEnd; // Guardamos la fecha de fin
@@ -793,7 +858,7 @@ namespace BrewScada
                                 embotelladoStartLabel.Text = $"Inicio: {stageStartTimes[stage].ToString("dd/MM/yyyy HH:mm:ss")}";
                                 embotelladoEndLabel.Text = $"Fin: {embotelladoEnd.ToString("dd/MM/yyyy HH:mm:ss")}";
                                 if (textBox1 != null)
-                                    textBox1.Text += $"{currentBatchName}: {Math.Round(embotellado):F0} botellas\r\n";
+                                    textBox1.Text += $"{currentBatchName}: {Math.Round(embotellado):F0} botellas ➞ 1L\r\n";
                             });
                             GuardarBotellasLlenas(currentBatchName, Math.Round(embotellado), embotelladoEnd);
                             break;
@@ -812,6 +877,7 @@ namespace BrewScada
                     label16.Text = $"Agua: {almacenAgua:F3} L";
                     label17.Text = $"Levadura: {almacenLevadura:F3} kg";
                     label18.Text = $"Botellas: {almacenBotellas:F0}";
+                    label32.Text = $"Lúpulo: {almacenLupulo:F3} kg"; // Actualizamos inventario de Lúpulo
                     progressBar1.Value = 100;
                     progressLabel.Text = $"Progreso: 100%";
                 });
@@ -821,6 +887,7 @@ namespace BrewScada
                 isPaused = false;
                 _processTimer.Enabled = false;
                 _delayTimer.Enabled = false;
+                _progressTimer.Enabled = false; // Desactivamos el timer de progreso
                 UpdateUI(() =>
                 {
                     button1.Text = "Empezar";
@@ -830,6 +897,8 @@ namespace BrewScada
                 stage = 0;
                 Array.Clear(stageUpdates, 0, stageUpdates.Length);
                 // No reiniciamos stageStartTimes ni stageEndTimes para preservar las fechas
+                fermentationProgress = 0; // Reiniciamos el progreso de Fermentación
+                fermentationStartTime = DateTime.MinValue; // Reiniciamos
 
                 // Guardar el fin del lote en la base de datos
                 UpdateBatchEndTime(lastBatchEndTime);
@@ -886,6 +955,7 @@ namespace BrewScada
                 label16.Text = $"Agua: {almacenAgua:F3} L";
                 label17.Text = $"Levadura: {almacenLevadura:F3} kg";
                 label18.Text = $"Botellas: {almacenBotellas:F0}";
+                label32.Text = $"Lúpulo: {almacenLupulo:F3} kg"; // Mostramos inventario inicial de Lúpulo
                 progressBar1.Value = 0;
                 progressLabel.Text = $"Progreso: 0%";
             });
@@ -933,6 +1003,10 @@ namespace BrewScada
                                 label18.ForeColor = Color.Red;
                                 statusMessage = $"Alerta: Botellas bajo ({ingrediente.Cantidad:F0} unidades)";
                                 break;
+                            case "lúpulo": // Nueva condición para Lúpulo
+                                label32.ForeColor = Color.Red;
+                                statusMessage = $"Alerta: Lúpulo bajo ({ingrediente.Cantidad:F3} kg)";
+                                break;
                         }
                     }
                     else
@@ -941,6 +1015,7 @@ namespace BrewScada
                         label16.ForeColor = Color.White;
                         label17.ForeColor = Color.White;
                         label18.ForeColor = Color.White;
+                        label32.ForeColor = Color.White; // Restablecemos el color de Lúpulo
                     }
                 }
                 inventoryStatusLabel.Text = statusMessage;
@@ -958,7 +1033,9 @@ namespace BrewScada
             if (!ingredientes.Exists(i => i.Nombre.ToLower() == "levadura"))
                 _inventoryManager.AddIngrediente(new Ingrediente { Nombre = "Levadura", Cantidad = 7.5m, UmbralMinimo = 0.75m });
             if (!ingredientes.Exists(i => i.Nombre.ToLower() == "botellas"))
-                _inventoryManager.AddIngrediente(new Ingrediente { Nombre = "Botellas", Cantidad = 10000m, UmbralMinimo = 1000m });
+                _inventoryManager.AddIngrediente(new Ingrediente { Nombre = "Botellas", Cantidad = 10000m, UmbralMinimo = 900m }); // Ajustamos el umbral a 900
+            if (!ingredientes.Exists(i => i.Nombre.ToLower() == "lúpulo")) // Añadimos Lúpulo
+                _inventoryManager.AddIngrediente(new Ingrediente { Nombre = "Lúpulo", Cantidad = 30m, UmbralMinimo = 3m });
         }
 
         private void restockButton_Click_2(object sender, EventArgs e)
@@ -987,7 +1064,7 @@ namespace BrewScada
             var document = new BsonDocument
             {
                 { "BatchName", batchName },
-                { "CantidadBotellas", cantidad },
+                { "CantidadBotellas", $"{batchName}: {Math.Round(cantidad):F0} botellas ➞ 1L" }, // Ajustamos para usar la cantidad ya redondeada
                 { "FechaProduccion", fechaProduccion.ToString("dd/MM/yyyy HH:mm:ss") }
             };
             _batchesBotellasCollection.InsertOne(document);
@@ -1018,6 +1095,14 @@ namespace BrewScada
         }
 
         private void label5_Click(object sender, EventArgs e)
+        {
+        }
+
+        private void label28_Click(object sender, EventArgs e)
+        {
+        }
+
+        private void label29_Click(object sender, EventArgs e)
         {
         }
     }

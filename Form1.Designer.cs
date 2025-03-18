@@ -26,6 +26,7 @@
             label17 = new Label();
             label16 = new Label();
             label15 = new Label();
+            label32 = new Label();
             label14 = new Label();
             inventoryStatusLabel = new Label();
             progressLabel = new Label();
@@ -35,6 +36,11 @@
             exportToPDFButton = new Button();
             button1 = new Button();
             panel2 = new Panel();
+            label34 = new Label();
+            label31 = new Label();
+            label30 = new Label();
+            label29 = new Label();
+            label28 = new Label();
             pictureBox8 = new PictureBox();
             pictureBox4 = new PictureBox();
             pictureBox7 = new PictureBox();
@@ -64,6 +70,7 @@
             label10 = new Label();
             label9 = new Label();
             label8 = new Label();
+            label33 = new Label();
             label6 = new Label();
             label5 = new Label();
             label4 = new Label();
@@ -102,19 +109,20 @@
             panel3.Controls.Add(label17);
             panel3.Controls.Add(label16);
             panel3.Controls.Add(label15);
+            panel3.Controls.Add(label32);
             panel3.Controls.Add(label14);
             panel3.Controls.Add(inventoryStatusLabel);
             panel3.Controls.Add(progressLabel);
             panel3.Location = new Point(12, 306);
             panel3.Margin = new Padding(4, 5, 4, 5);
             panel3.Name = "panel3";
-            panel3.Size = new Size(391, 430);
+            panel3.Size = new Size(391, 437);
             panel3.TabIndex = 2;
             // 
             // progressBar1
             // 
             progressBar1.ForeColor = Color.FromArgb(0, 180, 0);
-            progressBar1.Location = new Point(9, 310);
+            progressBar1.Location = new Point(9, 356);
             progressBar1.Name = "progressBar1";
             progressBar1.Size = new Size(373, 35);
             progressBar1.Style = ProgressBarStyle.Continuous;
@@ -164,6 +172,17 @@
             label15.Size = new Size(0, 28);
             label15.TabIndex = 1;
             // 
+            // label32
+            // 
+            label32.AutoSize = true;
+            label32.Font = new Font("Segoe UI", 10F);
+            label32.ForeColor = Color.White;
+            label32.Location = new Point(10, 283);
+            label32.Margin = new Padding(4, 0, 4, 0);
+            label32.Name = "label32";
+            label32.Size = new Size(0, 28);
+            label32.TabIndex = 5;
+            // 
             // label14
             // 
             label14.AutoSize = true;
@@ -181,7 +200,7 @@
             inventoryStatusLabel.AutoSize = true;
             inventoryStatusLabel.Font = new Font("Segoe UI", 10F);
             inventoryStatusLabel.ForeColor = Color.White;
-            inventoryStatusLabel.Location = new Point(10, 350);
+            inventoryStatusLabel.Location = new Point(10, 396);
             inventoryStatusLabel.Name = "inventoryStatusLabel";
             inventoryStatusLabel.Size = new Size(271, 28);
             inventoryStatusLabel.TabIndex = 5;
@@ -192,7 +211,7 @@
             progressLabel.AutoSize = true;
             progressLabel.Font = new Font("Segoe UI", 10F);
             progressLabel.ForeColor = Color.White;
-            progressLabel.Location = new Point(10, 280);
+            progressLabel.Location = new Point(10, 326);
             progressLabel.Name = "progressLabel";
             progressLabel.Size = new Size(127, 28);
             progressLabel.TabIndex = 7;
@@ -280,6 +299,11 @@
             // panel2
             // 
             panel2.BackColor = Color.DimGray;
+            panel2.Controls.Add(label34);
+            panel2.Controls.Add(label31);
+            panel2.Controls.Add(label30);
+            panel2.Controls.Add(label29);
+            panel2.Controls.Add(label28);
             panel2.Controls.Add(pictureBox8);
             panel2.Controls.Add(pictureBox4);
             panel2.Controls.Add(pictureBox7);
@@ -309,6 +333,7 @@
             panel2.Controls.Add(label10);
             panel2.Controls.Add(label9);
             panel2.Controls.Add(label8);
+            panel2.Controls.Add(label33);
             panel2.Controls.Add(label6);
             panel2.Controls.Add(label5);
             panel2.Controls.Add(label4);
@@ -317,6 +342,68 @@
             panel2.Name = "panel2";
             panel2.Size = new Size(1487, 966);
             panel2.TabIndex = 1;
+            // 
+            // label34
+            // 
+            label34.AutoSize = true;
+            label34.Font = new Font("Segoe UI", 10F);
+            label34.ForeColor = Color.White;
+            label34.Location = new Point(980, 914);
+            label34.Margin = new Padding(4, 0, 4, 0);
+            label34.Name = "label34";
+            label34.Size = new Size(122, 28);
+            label34.TabIndex = 39;
+            label34.Text = "Duración: 4h";
+            // 
+            // label31
+            // 
+            label31.AutoSize = true;
+            label31.Font = new Font("Segoe UI", 10F);
+            label31.ForeColor = Color.White;
+            label31.Location = new Point(972, 477);
+            label31.Margin = new Padding(4, 0, 4, 0);
+            label31.Name = "label31";
+            label31.Size = new Size(138, 28);
+            label31.TabIndex = 38;
+            label31.Text = "Duración:  96h";
+            // 
+            // label30
+            // 
+            label30.AutoSize = true;
+            label30.Font = new Font("Segoe UI", 10F);
+            label30.ForeColor = Color.White;
+            label30.Location = new Point(548, 514);
+            label30.Margin = new Padding(4, 0, 4, 0);
+            label30.Name = "label30";
+            label30.Size = new Size(127, 28);
+            label30.TabIndex = 37;
+            label30.Text = "Duración:  2h";
+            // 
+            // label29
+            // 
+            label29.AutoSize = true;
+            label29.Font = new Font("Segoe UI", 10F);
+            label29.ForeColor = Color.White;
+            label29.Location = new Point(158, 476);
+            label29.Margin = new Padding(4, 0, 4, 0);
+            label29.Name = "label29";
+            label29.Size = new Size(127, 28);
+            label29.TabIndex = 36;
+            label29.Text = "Duración:  1h";
+            label29.Click += label29_Click;
+            // 
+            // label28
+            // 
+            label28.AutoSize = true;
+            label28.Font = new Font("Segoe UI", 10F);
+            label28.ForeColor = Color.White;
+            label28.Location = new Point(548, 480);
+            label28.Margin = new Padding(4, 0, 4, 0);
+            label28.Name = "label28";
+            label28.Size = new Size(76, 28);
+            label28.TabIndex = 35;
+            label28.Text = "Lúpulo:";
+            label28.Click += label28_Click;
             // 
             // pictureBox8
             // 
@@ -389,7 +476,7 @@
             label27.AutoSize = true;
             label27.Font = new Font("Segoe UI", 10F);
             label27.ForeColor = Color.White;
-            label27.Location = new Point(988, 857);
+            label27.Location = new Point(981, 876);
             label27.Margin = new Padding(4, 0, 4, 0);
             label27.Name = "label27";
             label27.Size = new Size(64, 28);
@@ -449,7 +536,7 @@
             label22.AutoSize = true;
             label22.Font = new Font("Segoe UI", 10F);
             label22.ForeColor = Color.White;
-            label22.Location = new Point(988, 819);
+            label22.Location = new Point(981, 838);
             label22.Margin = new Padding(4, 0, 4, 0);
             label22.Name = "label22";
             label22.Size = new Size(42, 28);
@@ -461,7 +548,7 @@
             label23.AutoSize = true;
             label23.Font = new Font("Segoe UI", 10F);
             label23.ForeColor = Color.White;
-            label23.Location = new Point(988, 780);
+            label23.Location = new Point(981, 799);
             label23.Margin = new Padding(4, 0, 4, 0);
             label23.Name = "label23";
             label23.Size = new Size(63, 28);
@@ -544,7 +631,7 @@
             // pictureBox3
             // 
             pictureBox3.ImageLocation = "img_embotellado2.png";
-            pictureBox3.Location = new Point(968, 508);
+            pictureBox3.Location = new Point(968, 527);
             pictureBox3.Name = "pictureBox3";
             pictureBox3.Size = new Size(233, 207);
             pictureBox3.SizeMode = PictureBoxSizeMode.Zoom;
@@ -626,7 +713,7 @@
             label10.AutoSize = true;
             label10.Font = new Font("Segoe UI", 10F);
             label10.ForeColor = Color.FromArgb(0, 255, 0);
-            label10.Location = new Point(1126, 738);
+            label10.Location = new Point(1126, 757);
             label10.Margin = new Padding(4, 0, 4, 0);
             label10.Name = "label10";
             label10.Size = new Size(0, 28);
@@ -654,12 +741,23 @@
             label8.Size = new Size(0, 28);
             label8.TabIndex = 6;
             // 
+            // label33
+            // 
+            label33.AutoSize = true;
+            label33.Font = new Font("Segoe UI", 10F);
+            label33.ForeColor = Color.FromArgb(0, 255, 0);
+            label33.Location = new Point(625, 480);
+            label33.Margin = new Padding(4, 0, 4, 0);
+            label33.Name = "label33";
+            label33.Size = new Size(0, 28);
+            label33.TabIndex = 9;
+            // 
             // label6
             // 
             label6.AutoSize = true;
             label6.Font = new Font("Segoe UI", 10F);
             label6.ForeColor = Color.White;
-            label6.Location = new Point(980, 738);
+            label6.Location = new Point(980, 757);
             label6.Margin = new Padding(4, 0, 4, 0);
             label6.Name = "label6";
             label6.Size = new Size(128, 28);
@@ -731,6 +829,7 @@
         private Label label16;
         private Label label15;
         private Label label14;
+        private Label label32;
         private Button button2;
         private Button button3;
         private Panel panel2;
@@ -740,6 +839,7 @@
         private Label label10;
         private Label label9;
         private Label label8;
+        private Label label33;
         private Label label6;
         private Label label5;
         private Label label4;
@@ -766,5 +866,10 @@
         private PictureBox pictureBox7;
         private PictureBox pictureBox8;
         private PictureBox pictureBox4;
+        private Label label28;
+        private Label label29;
+        private Label label34;
+        private Label label31;
+        private Label label30;
     }
 }
