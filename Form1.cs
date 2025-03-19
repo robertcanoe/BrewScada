@@ -34,18 +34,18 @@ namespace BrewScada
         private DateTime lastBatchEndTime; // Almacena la fecha de fin del último batch
         private DateTime[] stageStartTimes;
         private DateTime[] stageEndTimes; // Almacena las fechas de fin de cada etapa
-        private DateTime fermentationStartTime; // Momento de inicio de la Fermentación
+        private DateTime pauseStartTime; // Para rastrear el inicio de una pausa
+        private double pausedTime; // Tiempo acumulado en pausa (en segundos)
         private string currentBatchName;
         private int batchCount;
         private const int TOTAL_BATCHES = 10;
         private const double MERMA_FACTOR = 0.9; // Factor de merma: 10% de pérdida
+        private const double TOTAL_BATCH_DURATION_SECONDS = 78.5; // Duración total de un batch en segundos (67.5s de etapas + 10s de retraso + 1s de pausa)
 
         // Tiempos en horas para cada etapa
         private readonly int[] stageDurations = new int[] { 1, 2, 96, 4 }; // Molienda: 1h, Cocción: 2h, Fermentación: 96h, Embotellado: 4h
         private int[] stageUpdates; // Contador de actualizaciones por etapa
-        private const int TOTAL_UPDATES = 103; // 1 + 2 + 96 + 4
         private int lastBatchNumber; // Para rastrear el último batch procesado
-        private double fermentationProgress; // Progreso continuo de Fermentación en horas simuladas
 
         private decimal almacenMalta = 2000m;
         private decimal almacenAgua = 12000m;
@@ -85,8 +85,8 @@ namespace BrewScada
             stage = 0;
             batchStartTime = DateTime.MinValue; // Inicializamos como vacío
             lastBatchEndTime = DateTime.MinValue; // Inicializamos como vacío
-            fermentationStartTime = DateTime.MinValue; // Inicializamos
-            fermentationProgress = 0; // Inicializamos el progreso de Fermentación
+            pauseStartTime = DateTime.MinValue; // Inicializamos
+            pausedTime = 0; // Inicializamos el tiempo pausado
             stageStartTimes = new DateTime[4];
             stageEndTimes = new DateTime[4]; // Inicializamos el arreglo para las fechas de fin
             batchCount = 0;
@@ -190,7 +190,6 @@ namespace BrewScada
                     label33.Text = "0.000 kg de Lúpulo"; // Reiniciamos la etiqueta de Lúpulo consumido con formato F3
                 });
                 Array.Clear(stageUpdates, 0, stageUpdates.Length); // Reiniciamos contadores de actualizaciones
-                fermentationProgress = 0; // Reiniciamos el progreso de Fermentación
                 _progressTimer.Enabled = true; // Activamos el timer de progreso
             }
 
@@ -199,10 +198,6 @@ namespace BrewScada
             if (stageUpdates[stage] < updatesNeeded)
             {
                 stageUpdates[stage]++;
-                if (stage == 2 && stageUpdates[stage] == 1)
-                {
-                    fermentationStartTime = DateTime.Now; // Registramos el inicio de Fermentación
-                }
             }
 
             // Calculamos los tiempos y actualizamos las etiquetas solo al completar cada etapa
@@ -285,7 +280,7 @@ namespace BrewScada
                     }
                     break;
 
-                case 2: // Fermentación (96 horas = 2 actualizaciones, progreso continuo)
+                case 2: // Fermentación (96 horas = 2 actualizaciones)
                     if (stageUpdates[stage] == 1)
                     {
                         stageStartTimes[stage] = batchStartTime.AddHours(3); // Continuamos desde el fin de Cocción
@@ -362,7 +357,7 @@ namespace BrewScada
                         // Iniciamos el timer de retraso de 10 segundos
                         _delayTimer.Enabled = true;
                         _processTimer.Enabled = false; // Pausamos el timer principal
-                        _progressTimer.Enabled = false; // Desactivamos el timer de progreso
+                        // NO desactivamos _progressTimer aquí para que el progreso siga subiendo durante el retraso
                     }
                     break;
             }
@@ -375,12 +370,15 @@ namespace BrewScada
 
         private void OnDelayTimerTick(object sender, EventArgs e)
         {
+            Console.WriteLine("OnDelayTimerTick: Iniciando...");
             _delayTimer.Enabled = false;
 
             lastBatchEndTime = stageEndTimes[3]; // Guardamos la fecha de fin del batch actual
 
+            // Guardamos las botellas en la base de datos y actualizamos textBox1 ANTES de iniciar un nuevo batch
             if (isRunning)
             {
+                Console.WriteLine($"OnDelayTimerTick: Guardando botellas para {currentBatchName}...");
                 GuardarBotellasLlenas(currentBatchName, Math.Round(cantidadBotellas * (decimal)MERMA_FACTOR), lastBatchEndTime);
                 lastBatchNumber = int.Parse(currentBatchName.Replace("Batch_", ""));
             }
@@ -388,12 +386,24 @@ namespace BrewScada
             UpdateUI(() =>
             {
                 if (textBox1 != null)
+                {
+                    Console.WriteLine($"OnDelayTimerTick: Agregando a textBox1: {currentBatchName}: {Math.Round(cantidadBotellas * (decimal)MERMA_FACTOR):F0} botellas ➞ 1L");
                     textBox1.Text += $"{currentBatchName}: {Math.Round(cantidadBotellas * (decimal)MERMA_FACTOR):F0} botellas ➞ 1L\r\n";
+                    textBox1.Refresh(); // Forzamos la actualización de textBox1
+                }
+                // Aseguramos que la barra de progreso llegue al 100% al final del batch
+                progressBar1.Value = 100;
+                progressLabel.Text = "Progreso: 100%";
             });
+
+            // Desactivamos el timer de progreso ahora que el batch ha terminado
+            _progressTimer.Enabled = false;
+            Console.WriteLine("OnDelayTimerTick: _progressTimer desactivado.");
 
             batchCount++;
             if (batchCount < TOTAL_BATCHES)
             {
+                Console.WriteLine("OnDelayTimerTick: Iniciando un nuevo batch...");
                 // Generamos un nuevo nombre de batch y lo registramos en la base de datos
                 int currentBatchCount = GetCurrentBatchCount();
                 int nextBatchNumber = currentBatchCount + 1;
@@ -415,7 +425,7 @@ namespace BrewScada
                 Array.Clear(stageUpdates, 0, stageUpdates.Length);
 
                 // Usamos la fecha de fin del batch anterior como inicio del siguiente
-                batchStartTime = lastBatchEndTime;
+                batchStartTime = DateTime.Now; // Usamos DateTime.Now para un nuevo inicio preciso
                 stageStartTimes[0] = batchStartTime;
 
                 // Precalculamos todas las fechas para el nuevo batch
@@ -432,13 +442,14 @@ namespace BrewScada
 
                 UpdateUI(() =>
                 {
+                    Console.WriteLine("OnDelayTimerTick: Reiniciando etiquetas para el nuevo batch...");
                     // Reinicio de etiquetas y valores visuales
                     label7.Text = "0.000 kg de Malta";
                     label8.Text = "0.000 L de Agua";
                     label9.Text = "0.000 kg de Levadura";
                     label10.Text = "0 botellas";
                     label33.Text = "0.000 kg de Lúpulo"; // Reiniciamos la etiqueta de Lúpulo consumido
-                    progressBar1.Value = 0;
+                    progressBar1.Value = 0; // Reiniciamos la barra de progreso
                     progressLabel.Text = "Progreso: 0%";
 
                     // No tocamos las etiquetas de las etapas ya completadas
@@ -474,26 +485,28 @@ namespace BrewScada
                 Thread.Sleep(1000);
                 _processTimer.Enabled = true;
                 _progressTimer.Enabled = true; // Reactivamos el timer de progreso
+                Console.WriteLine("OnDelayTimerTick: _progressTimer reactivado para el nuevo batch.");
             }
             else
             {
+                Console.WriteLine("OnDelayTimerTick: Proceso completado (10 batches).");
                 isRunning = false;
                 UpdateUI(() =>
                 {
                     button1.Text = "Empezar";
                     button2.Text = "Pausar";
                     progressLabel.Text = "Progreso: 100% (10,000 botellas completadas)";
+                    progressBar1.Value = 100; // Aseguramos que la barra llegue al 100%
                 });
                 batchCount = 0;
                 isFirstBatch = true; // Reiniciamos para que el próximo ciclo comience desde DateTime.Now
                 batchStartTime = DateTime.MinValue; // Reiniciamos batchStartTime para el próximo ciclo
                 lastBatchEndTime = DateTime.MinValue; // Reiniciamos lastBatchEndTime
-                fermentationStartTime = DateTime.MinValue; // Reiniciamos
-                fermentationProgress = 0; // Reiniciamos
-                _progressTimer.Enabled = false; // Desactivamos el timer de progreso
+                pausedTime = 0; // Reiniciamos el tiempo pausado
             }
 
             CheckAndNotifyInventory();
+            Console.WriteLine("OnDelayTimerTick: Finalizado.");
         }
 
         private void StartNextBatch()
@@ -556,12 +569,12 @@ namespace BrewScada
             });
             _processTimer.Enabled = true;
             _progressTimer.Enabled = true; // Activamos el timer de progreso
+            Console.WriteLine("StartNextBatch: _progressTimer activado.");
             isRunning = true;
             stage = 0;
             CheckAndNotifyInventory();
             Array.Clear(stageStartTimes, 0, stageStartTimes.Length);
             Array.Clear(stageUpdates, 0, stageUpdates.Length); // Reiniciamos contadores
-            fermentationProgress = 0; // Reiniciamos el progreso de Fermentación
             lastBatchNumber = int.Parse(currentBatchName.Replace("Batch_", "")); // Actualizamos el último batch
         }
 
@@ -579,33 +592,32 @@ namespace BrewScada
 
         private void UpdateProgress()
         {
-            int totalUpdatesSoFar = 0;
-            for (int i = 0; i < stage; i++)
+            if (batchStartTime == DateTime.MinValue || !isRunning)
             {
-                totalUpdatesSoFar += stageDurations[i];
+                Console.WriteLine("UpdateProgress: Saliendo porque batchStartTime no está inicializado o no está en ejecución.");
+                return; // No actualizamos el progreso si el batch no ha comenzado o no está en ejecución
             }
 
-            // Para Fermentación (stage == 2), calculamos un progreso continuo
-            if (stage == 2 && fermentationStartTime != DateTime.MinValue)
-            {
-                double elapsedSeconds = (DateTime.Now - fermentationStartTime).TotalSeconds;
-                double totalFermentationDuration = 15.0; // 2 × 7.5 segundos
-                double progressFraction = Math.Min(elapsedSeconds / totalFermentationDuration, 1.0); // Proporción del tiempo transcurrido
-                fermentationProgress = progressFraction * 96.0; // Progreso en horas simuladas (0 a 96)
+            // Calculamos el tiempo transcurrido desde el inicio del batch (en segundos)
+            double elapsedSeconds = (DateTime.Now - batchStartTime).TotalSeconds;
 
-                totalUpdatesSoFar += (int)fermentationProgress;
-            }
-            else
-            {
-                totalUpdatesSoFar += stageUpdates[stage];
-            }
+            // Restamos el tiempo acumulado en pausa
+            elapsedSeconds -= pausedTime;
 
-            int progressPercentage = (int)((totalUpdatesSoFar * 100) / TOTAL_UPDATES);
+            // Calculamos el porcentaje de progreso basado en el tiempo transcurrido
+            double progressPercentage = (elapsedSeconds / TOTAL_BATCH_DURATION_SECONDS) * 100;
+
+            // Aseguramos que el porcentaje esté entre 0 y 100
+            progressPercentage = Math.Min(progressPercentage, 100);
+            progressPercentage = Math.Max(progressPercentage, 0);
+
             UpdateUI(() =>
             {
-                progressBar1.Value = Math.Min(progressPercentage, 100);
-                progressLabel.Text = $"Progreso: {progressPercentage}%";
+                progressBar1.Value = (int)progressPercentage;
+                progressLabel.Text = $"Progreso: {(int)progressPercentage}%";
             });
+
+            Console.WriteLine($"UpdateProgress: elapsedSeconds={elapsedSeconds:F2}, pausedTime={pausedTime:F2}, progressPercentage={progressPercentage:F2}%");
         }
 
         private decimal ProcesarMolienda(decimal cantidadMalta)
@@ -650,6 +662,8 @@ namespace BrewScada
             }
 
             isRunning = true;
+            isPaused = false; // Aseguramos que no esté pausado
+            pausedTime = 0; // Reiniciamos el tiempo pausado
 
             // Establecemos la hora inicial solo si es el primer batch
             if (isFirstBatch)
@@ -657,7 +671,10 @@ namespace BrewScada
                 batchStartTime = DateTime.Now;
                 isFirstBatch = false; // Marcamos que ya no es el primer batch
             }
-            // Para batches posteriores, batchStartTime ya está establecido como lastBatchEndTime
+            else
+            {
+                batchStartTime = DateTime.Now; // Usamos DateTime.Now para un nuevo inicio preciso
+            }
 
             // Obtenemos el siguiente número de batch desde la base de datos
             int currentBatchCount = GetCurrentBatchCount();
@@ -698,6 +715,7 @@ namespace BrewScada
             _processTimer.Enabled = true;
             stage = 0;
             CheckAndNotifyInventory();
+            Console.WriteLine($"button1_Click: batchStartTime={batchStartTime}, isRunning={isRunning}, _progressTimer.Enabled={_progressTimer.Enabled}");
         }
 
         private void UpdateBatchCounter(int newValue)
@@ -775,6 +793,13 @@ namespace BrewScada
                 button2.Text = "Pausar";
                 _processTimer.Enabled = true;
                 _progressTimer.Enabled = true;
+                // Calculamos el tiempo que estuvo pausado y lo añadimos a pausedTime
+                if (pauseStartTime != DateTime.MinValue)
+                {
+                    pausedTime += (DateTime.Now - pauseStartTime).TotalSeconds;
+                    pauseStartTime = DateTime.MinValue;
+                }
+                Console.WriteLine($"button2_Click: Reanudando, pausedTime={pausedTime:F2}, _progressTimer.Enabled={_progressTimer.Enabled}");
             }
             else
             {
@@ -782,6 +807,8 @@ namespace BrewScada
                 button2.Text = "Continuar";
                 _processTimer.Enabled = false;
                 _progressTimer.Enabled = false;
+                pauseStartTime = DateTime.Now; // Registramos el inicio de la pausa
+                Console.WriteLine($"button2_Click: Pausando, pauseStartTime={pauseStartTime}, _progressTimer.Enabled={_progressTimer.Enabled}");
             }
         }
 
@@ -897,8 +924,8 @@ namespace BrewScada
                 stage = 0;
                 Array.Clear(stageUpdates, 0, stageUpdates.Length);
                 // No reiniciamos stageStartTimes ni stageEndTimes para preservar las fechas
-                fermentationProgress = 0; // Reiniciamos el progreso de Fermentación
-                fermentationStartTime = DateTime.MinValue; // Reiniciamos
+                pausedTime = 0; // Reiniciamos el tiempo pausado
+                pauseStartTime = DateTime.MinValue; // Reiniciamos
 
                 // Guardar el fin del lote en la base de datos
                 UpdateBatchEndTime(lastBatchEndTime);
@@ -1064,7 +1091,7 @@ namespace BrewScada
             var document = new BsonDocument
             {
                 { "BatchName", batchName },
-                { "CantidadBotellas", $"{batchName}: {Math.Round(cantidad):F0} botellas ➞ 1L" }, // Ajustamos para usar la cantidad ya redondeada
+                { "CantidadBotellas", $"{batchName}: {Math.Round(cantidad):F0} botellas ➞ 1L" },
                 { "FechaProduccion", fechaProduccion.ToString("dd/MM/yyyy HH:mm:ss") }
             };
             _batchesBotellasCollection.InsertOne(document);
