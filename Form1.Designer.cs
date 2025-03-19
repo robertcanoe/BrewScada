@@ -20,6 +20,14 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             panel1 = new Panel();
+            panel4 = new Panel();
+            label36 = new Label();
+            label35 = new Label();
+            label37 = new Label();
+            label41 = new Label();
+            label38 = new Label();
+            label40 = new Label();
+            label39 = new Label();
             panel3 = new Panel();
             progressBar1 = new ProgressBar();
             label18 = new Label();
@@ -75,6 +83,7 @@
             label5 = new Label();
             label4 = new Label();
             panel1.SuspendLayout();
+            panel4.SuspendLayout();
             panel3.SuspendLayout();
             groupBox1.SuspendLayout();
             panel2.SuspendLayout();
@@ -91,6 +100,7 @@
             // panel1
             // 
             panel1.BackColor = Color.Gray;
+            panel1.Controls.Add(panel4);
             panel1.Controls.Add(panel3);
             panel1.Controls.Add(groupBox1);
             panel1.Controls.Add(panel2);
@@ -100,6 +110,105 @@
             panel1.Name = "panel1";
             panel1.Size = new Size(1898, 1024);
             panel1.TabIndex = 0;
+            // 
+            // panel4
+            // 
+            panel4.BackColor = Color.DimGray;
+            panel4.Controls.Add(label36);
+            panel4.Controls.Add(label35);
+            panel4.Controls.Add(label37);
+            panel4.Controls.Add(label41);
+            panel4.Controls.Add(label38);
+            panel4.Controls.Add(label40);
+            panel4.Controls.Add(label39);
+            panel4.Location = new Point(12, 751);
+            panel4.Name = "panel4";
+            panel4.Size = new Size(392, 224);
+            panel4.TabIndex = 3;
+            // 
+            // label36
+            // 
+            label36.AutoSize = true;
+            label36.Font = new Font("Segoe UI", 10F);
+            label36.ForeColor = Color.White;
+            label36.Location = new Point(15, 184);
+            label36.Margin = new Padding(4, 0, 4, 0);
+            label36.Name = "label36";
+            label36.Size = new Size(314, 28);
+            label36.TabIndex = 45;
+            label36.Text = "Duración total (1 batch): 103 horas";
+            // 
+            // label35
+            // 
+            label35.AutoSize = true;
+            label35.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
+            label35.ForeColor = Color.FromArgb(0, 191, 255);
+            label35.Location = new Point(0, 1);
+            label35.Margin = new Padding(4, 0, 4, 0);
+            label35.Name = "label35";
+            label35.Size = new Size(397, 32);
+            label35.TabIndex = 8;
+            label35.Text = "Consumo real de materias primas";
+            // 
+            // label37
+            // 
+            label37.AutoSize = true;
+            label37.Font = new Font("Segoe UI", 10F);
+            label37.ForeColor = Color.White;
+            label37.Location = new Point(17, 154);
+            label37.Margin = new Padding(4, 0, 4, 0);
+            label37.Name = "label37";
+            label37.Size = new Size(284, 28);
+            label37.TabIndex = 44;
+            label37.Text = "Levadura: 0.75 kilogramos (kg) ";
+            // 
+            // label41
+            // 
+            label41.AutoSize = true;
+            label41.Font = new Font("Segoe UI", 10F);
+            label41.ForeColor = Color.White;
+            label41.Location = new Point(17, 47);
+            label41.Margin = new Padding(4, 0, 4, 0);
+            label41.Name = "label41";
+            label41.Size = new Size(346, 28);
+            label41.TabIndex = 40;
+            label41.Text = "Malta de cebada: 200 kilogramos (kg) ";
+            label41.Click += label41_Click;
+            // 
+            // label38
+            // 
+            label38.AutoSize = true;
+            label38.Font = new Font("Segoe UI", 10F);
+            label38.ForeColor = Color.White;
+            label38.Location = new Point(17, 120);
+            label38.Margin = new Padding(4, 0, 4, 0);
+            label38.Name = "label38";
+            label38.Size = new Size(239, 28);
+            label38.TabIndex = 43;
+            label38.Text = "Lúpulo: 3 kilogramos (kg) ";
+            // 
+            // label40
+            // 
+            label40.AutoSize = true;
+            label40.Font = new Font("Segoe UI", 10F);
+            label40.ForeColor = Color.FromArgb(0, 255, 0);
+            label40.Location = new Point(136, 47);
+            label40.Margin = new Padding(4, 0, 4, 0);
+            label40.Name = "label40";
+            label40.Size = new Size(0, 28);
+            label40.TabIndex = 41;
+            // 
+            // label39
+            // 
+            label39.AutoSize = true;
+            label39.Font = new Font("Segoe UI", 10F);
+            label39.ForeColor = Color.White;
+            label39.Location = new Point(17, 82);
+            label39.Margin = new Padding(4, 0, 4, 0);
+            label39.Name = "label39";
+            label39.Size = new Size(195, 28);
+            label39.TabIndex = 42;
+            label39.Text = "Agua: 1.200 litros (L) ";
             // 
             // panel3
             // 
@@ -230,7 +339,7 @@
             groupBox1.Margin = new Padding(4, 5, 4, 5);
             groupBox1.Name = "groupBox1";
             groupBox1.Padding = new Padding(4, 5, 4, 5);
-            groupBox1.Size = new Size(388, 265);
+            groupBox1.Size = new Size(388, 282);
             groupBox1.TabIndex = 0;
             groupBox1.TabStop = false;
             groupBox1.Text = "Control de Producción";
@@ -802,6 +911,8 @@
             Text = "BrewScada";
             Load += Form1_Load;
             panel1.ResumeLayout(false);
+            panel4.ResumeLayout(false);
+            panel4.PerformLayout();
             panel3.ResumeLayout(false);
             panel3.PerformLayout();
             groupBox1.ResumeLayout(false);
@@ -871,5 +982,13 @@
         private Label label34;
         private Label label31;
         private Label label30;
+        private Panel panel4;
+        private Label label35;
+        private Label label36;
+        private Label label37;
+        private Label label38;
+        private Label label39;
+        private Label label40;
+        private Label label41;
     }
 }

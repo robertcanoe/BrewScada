@@ -387,8 +387,8 @@ namespace BrewScada
             {
                 if (textBox1 != null)
                 {
-                    Console.WriteLine($"OnDelayTimerTick: Agregando a textBox1: {currentBatchName}: {Math.Round(cantidadBotellas * (decimal)MERMA_FACTOR):F0} botellas ➞ 1L");
-                    textBox1.Text += $"{currentBatchName}: {Math.Round(cantidadBotellas * (decimal)MERMA_FACTOR):F0} botellas ➞ 1L\r\n";
+                    Console.WriteLine($"OnDelayTimerTick: Agregando a textBox1: {currentBatchName}: (Lager) {Math.Round(cantidadBotellas * (decimal)MERMA_FACTOR):F0} botellas ➞ 1L");
+                    textBox1.Text += $"{currentBatchName}: (Lager) {Math.Round(cantidadBotellas * (decimal)MERMA_FACTOR):F0} botellas ➞ 1L\r\n";
                     textBox1.Refresh(); // Forzamos la actualización de textBox1
                 }
                 // Aseguramos que la barra de progreso llegue al 100% al final del batch
@@ -885,7 +885,7 @@ namespace BrewScada
                                 embotelladoStartLabel.Text = $"Inicio: {stageStartTimes[stage].ToString("dd/MM/yyyy HH:mm:ss")}";
                                 embotelladoEndLabel.Text = $"Fin: {embotelladoEnd.ToString("dd/MM/yyyy HH:mm:ss")}";
                                 if (textBox1 != null)
-                                    textBox1.Text += $"{currentBatchName}: {Math.Round(embotellado):F0} botellas ➞ 1L\r\n";
+                                    textBox1.Text += $"{currentBatchName}: (Lager) {Math.Round(embotellado):F0} botellas ➞ 1L\r\n";
                             });
                             GuardarBotellasLlenas(currentBatchName, Math.Round(embotellado), embotelladoEnd);
                             break;
@@ -1091,7 +1091,7 @@ namespace BrewScada
             var document = new BsonDocument
             {
                 { "BatchName", batchName },
-                { "CantidadBotellas", $"{batchName}: {Math.Round(cantidad):F0} botellas ➞ 1L" },
+                { "CantidadBotellas", $"{batchName}: (Lager) {Math.Round(cantidad):F0} botellas ➞ 1L" },
                 { "FechaProduccion", fechaProduccion.ToString("dd/MM/yyyy HH:mm:ss") }
             };
             _batchesBotellasCollection.InsertOne(document);
@@ -1131,6 +1131,11 @@ namespace BrewScada
 
         private void label29_Click(object sender, EventArgs e)
         {
+        }
+
+        private void label41_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }
