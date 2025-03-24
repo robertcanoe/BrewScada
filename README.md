@@ -1,4 +1,8 @@
-![Captura de pantalla 2025-03-18 103651](https://github.com/user-attachments/assets/c496dad3-c8b9-4ab3-ab88-47626490a8c2)
+<div align="center">
+  <img src="./img_app.png" alt="BrewScada Application">
+  <p><em>Vista principal de la aplicación BrewScada mostrando el panel de control de producción cervecera</em></p>
+</div>
+
 # BrewScada
 **BrewScada** es una aplicación desarrollada para la gestión automatizada de la producción de cerveza en una planta cervecera. Construida con **C#** y **WinForms**, simula y controla las etapas de producción (molienda, cocción, fermentación y embotellado), gestiona el inventario de materias primas y registra datos en una base de datos **MongoDB**. Incluye monitoreo en tiempo real, alertas de inventario y exportación de registros a PDF.
 
