@@ -1113,6 +1113,11 @@ namespace BrewScada
             }
         }
 
+        private void button4_Click(object sender, EventArgs e)
+        {
+            // Cerrar la aplicación
+            Application.Exit();
+        }
         private void label1_Click(object sender, EventArgs e)
         {
         }
