@@ -37,9 +37,21 @@
 ## Instalación
 
 1. **Clona el Repositorio**
+
+#### Para https:
    ```bash
-   git clone https://github.com/<tu-usuario>/BrewScada.git
+   https://github.com/robertcanoe/BrewScada.git
+   
    cd BrewScada
+   ```
+
+#### Para shh:
+```bash
+   git@github.com:robertcanoe/BrewScada.git
+
+   cd BrewScada
+   ```
+
 
 2. **Instala Dependencias**
 - Asegúrate de tener .NET Framework 4.7.2+ instalado.
