@@ -82,6 +82,7 @@
             label6 = new Label();
             label5 = new Label();
             label4 = new Label();
+            button4 = new Button();
             panel1.SuspendLayout();
             panel4.SuspendLayout();
             panel3.SuspendLayout();
@@ -329,6 +330,7 @@
             // groupBox1
             // 
             groupBox1.BackColor = SystemColors.ControlDarkDark;
+            groupBox1.Controls.Add(button4);
             groupBox1.Controls.Add(button3);
             groupBox1.Controls.Add(button2);
             groupBox1.Controls.Add(exportToPDFButton);
@@ -898,6 +900,21 @@
             label4.TabIndex = 2;
             label4.Text = "Cocción:";
             // 
+            // button4
+            // 
+            button4.BackColor = Color.Red;
+            button4.FlatStyle = FlatStyle.Flat;
+            button4.Font = new Font("Segoe UI", 10F);
+            button4.ForeColor = Color.Black;
+            button4.Location = new Point(202, 130);
+            button4.Margin = new Padding(4, 5, 4, 5);
+            button4.Name = "button4";
+            button4.Size = new Size(150, 40);
+            button4.TabIndex = 5;
+            button4.Text = "Salir";
+            button4.UseVisualStyleBackColor = false;
+            button4.Click += new System.EventHandler(this.button4_Click);
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(10F, 25F);
@@ -990,5 +1007,6 @@
         private Label label39;
         private Label label40;
         private Label label41;
-    }
+        private Button button4;
+        }
 }
