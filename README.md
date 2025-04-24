@@ -111,3 +111,6 @@ dotnet restore
 - **"Un lote está ya en ejecución"**: Finaliza el batch actual con "Detener".
 - **Batch no cambia de nombre**: Verifica que MongoDB esté activo en `localhost:27017`.
 - **Error al exportar PDF**: Asegúrate de tener permisos de escritura en la carpeta destino.
+
+## Desarrollada:
+- *Roberto Cano y Carlos Castro*
